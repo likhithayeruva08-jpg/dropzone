@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DropZone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f2fc; --card: #ffffff; --border: #e3dbf3; --text: #1f1633; --muted: #6a5f85;
+  --accent: #6b3fc2; --accent-light: #ece4fb; --accent-text: #3d1f82;
+  --danger: #b4401a; --danger-light: #fdeee8;
+  --warn: #8a5a00; --warn-light: #fcf1d6;
+  --blue: #4553b8; --blue-light: #e4e7fb;
+  --pink: #a3225f; --pink-light: #fce8f1;
+  --radius: 14px;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #150f24; --card: #1f1733; --border: #382c58; --text: #f0eafc; --muted: #b1a5d1;
+    --accent: #c4a8ff; --accent-light: #432a85; --accent-text: #ece4fb;
+    --danger: #f4a083; --danger-light: #4a1e0e;
+    --warn: #f2c14e; --warn-light: #43300a;
+    --blue: #aab4ff; --blue-light: #2a3180;
+    --pink: #f19ac3; --pink-light: #5a1a3a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #150f24; --card: #1f1733; --border: #382c58; --text: #f0eafc; --muted: #b1a5d1;
+  --accent: #c4a8ff; --accent-light: #432a85; --accent-text: #ece4fb;
+  --danger: #f4a083; --danger-light: #4a1e0e;
+  --warn: #f2c14e; --warn-light: #43300a;
+  --blue: #aab4ff; --blue-light: #2a3180;
+  --pink: #f19ac3; --pink-light: #5a1a3a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+body { max-width: 560px; margin: 0 auto; padding: 16px 16px 48px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; }
+h2 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+.sub { color: var(--muted); font-size: 13px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: env(safe-area-inset-top, 0px); margin-bottom: 14px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab { border: 1px solid var(--border); background: var(--card); color: var(--muted); padding: 8px 14px; border-radius: 999px; font-size: 13px; cursor: pointer; }
+.tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+select, input[type=text], input[type=number], textarea { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 14px; margin-bottom: 10px; font-family: inherit; }
+textarea { resize: vertical; min-height: 60px; }
+.zone-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.zone-bar select { margin-bottom: 0; flex: 1; min-width: 140px; }
+.map-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.map-zone { border: 1px solid var(--border); border-radius: 12px; padding: 10px 6px; text-align: center; cursor: pointer; background: var(--card); }
+.map-zone .mz-name { font-size: 12px; font-weight: 600; }
+.map-zone .mz-mood { font-size: 11px; margin-top: 2px; }
+.map-zone .mz-n { font-size: 10px; opacity: .75; margin-top: 2px; }
+.map-zone.m-hot { background: var(--danger-light); color: var(--danger); }
+.map-zone.m-warm { background: var(--warn-light); color: var(--warn); }
+.map-zone.m-cool { background: var(--accent-light); color: var(--accent-text); }
+.map-zone.m-info { background: var(--blue-light); color: var(--blue); }
+.map-zone.selected { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--text); }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.card img { width: 100%; border-radius: 10px; margin: 8px 0; display: block; max-height: 220px; object-fit: cover; }
+.card.ghost .post-title { color: var(--muted); letter-spacing: 1px; filter: blur(3px); user-select: none; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--accent-light); color: var(--accent-text); }
+.tag.warn { background: var(--warn-light); color: var(--warn); }
+.tag.danger { background: var(--danger-light); color: var(--danger); }
+.tag.blue { background: var(--blue-light); color: var(--blue); }
+.tag.pink { background: var(--pink-light); color: var(--pink); }
+.ttl { font-size: 12px; color: var(--muted); }
+.post-title { font-size: 15px; font-weight: 600; margin: 8px 0 4px; word-break: break-word; }
+button { font-family: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); padding: 8px 12px; font-size: 13px; }
+button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+button.ghostbtn { background: transparent; }
+button.sm { padding: 6px 10px; font-size: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip { padding: 6px 11px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; background: var(--card); }
+.chip.on { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+.empty { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 14px; }
+.note { font-size: 12px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-top: 4px; }
+.field-label { font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 4px; display: block; }
+.error { color: var(--danger); font-size: 12px; margin: -4px 0 8px; }
+.privacy p { font-size: 14px; line-height: 1.6; }
+.mod-item { border-left: 3px solid var(--warn); }
+.strike-row { display: flex; gap: 4px; margin: 6px 0; align-items: center; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); }
+.dot.on { background: var(--danger); }
+.report-panel { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.vibe { background: linear-gradient(135deg, var(--accent-light), var(--blue-light)); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.vibe .vh { font-size: 17px; font-weight: 700; margin: 2px 0 6px; }
+.vibe .vl { font-size: 13px; margin: 3px 0; }
+.life { height: 4px; border-radius: 2px; background: var(--border); margin: 8px 0 4px; overflow: hidden; }
+.life > div { height: 100%; background: var(--accent); }
+.qr-wrap { text-align: center; }
+.qr-wrap svg { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 10px; }
+.banned-box { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+/* ===== UX layer ===== */
+:root { --display: "Bricolage Grotesque", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+body { padding-bottom: 112px; }
+h1, h2, .ob-title { font-family: var(--display); letter-spacing: -0.01em; }
+input[type=email] { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 16px; margin-bottom: 10px; font-family: inherit; }
+select, input[type=text], input[type=number], textarea { font-size: 16px; }
+button, .chip, .tab, .map-zone { min-height: 40px; }
+button.sm { min-height: 40px; padding: 8px 12px; }
+.tab { padding: 10px 16px; display: inline-flex; align-items: center; }
+.chip { display: inline-flex; align-items: center; padding: 8px 14px; font-size: 14px; }
+.chips { gap: 8px; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* onboarding */
+.ob { margin-top: 7vh; }
+.ob-rings circle { transform-origin: 60px 60px; opacity: .85; }
+.ob-rings circle:nth-child(1) { opacity: .25; }
+.ob-rings circle:nth-child(2) { opacity: .5; }
+.ob-rings circle:nth-child(3) { opacity: .75; }
+@media (prefers-reduced-motion: no-preference) {
+  .ob-rings circle { animation: ringIn 1.1s cubic-bezier(.2,.8,.2,1) both; }
+  .ob-rings circle:nth-child(2) { animation-delay: .12s; }
+  .ob-rings circle:nth-child(3) { animation-delay: .24s; }
+  .ob-rings circle:nth-child(4) { animation-delay: .36s; }
+}
+@keyframes ringIn { from { transform: scale(.3); opacity: 0; } }
+.ob-title { font-size: 34px; font-weight: 700; margin: 10px 0 2px; }
+.ob-tag { color: var(--muted); font-size: 15px; margin: 0 0 20px; }
+.ob-steps { list-style: none; counter-reset: s; margin: 0 0 20px; padding: 0; }
+.ob-steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; column-gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.ob-steps li:last-child { border-bottom: 1px solid var(--border); }
+.ob-steps li::before { content: counter(s); grid-row: span 2; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-light); color: var(--accent-text); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.ob-steps strong { font-size: 15px; }
+.ob-steps span { font-size: 13px; color: var(--muted); }
+.ob-btn { width: 100%; min-height: 48px; font-size: 16px; margin-top: 4px; }
+.ob-fine { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; }
+
+/* presence banner */
+.presence { display: grid; grid-template-columns: 32px 1fr; column-gap: 12px; align-items: start; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; border: 1px solid var(--border); background: var(--card); }
+.presence .p-ic { width: 30px; height: 30px; }
+.presence .p-title { font-weight: 700; font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.presence .p-body { font-size: 13px; margin-top: 2px; }
+.presence .p-act { margin-top: 10px; }
+.presence.ok { background: var(--accent-light); color: var(--accent-text); border-color: transparent; }
+.presence.info { background: var(--blue-light); color: var(--blue); border-color: transparent; }
+.presence.warn { background: var(--warn-light); color: var(--warn); border-color: transparent; }
+.presence.bad { background: var(--danger-light); color: var(--danger); border-color: transparent; }
+.presence .tag { background: rgba(255,255,255,.55); color: inherit; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .presence .tag { background: rgba(0,0,0,.25); } }
+:root[data-theme="dark"] .presence .tag { background: rgba(0,0,0,.25); }
+.presence.nudge { animation: nudge .45s; }
+@media (prefers-reduced-motion: reduce) { .presence.nudge { animation: none; outline: 3px solid currentColor; } }
+@keyframes nudge { 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+.qr-badge:empty { display: none; }
+.qr-badge { margin: -4px 0 10px; }
+
+/* demo tools */
+.demo-tools { margin: 4px 0 12px; font-size: 12px; color: var(--muted); }
+.demo-tools summary { cursor: pointer; padding: 8px 0; }
+
+/* floating drop button */
+.fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 20; min-height: 52px; padding: 0 22px; border-radius: 999px; font-size: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.22); }
+
+
+/* compact header + zone strip */
+.top { flex-wrap: wrap; }
+.top > div:first-child { flex: 1 1 100%; }
+.zone-bar { display: none; }
+.map-grid { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 6px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+.map-zone { flex: 0 0 116px; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; }
+.map-zone:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* empty state */
+.empty-t { display: block; font-family: var(--display); font-size: 18px; color: var(--text); margin-bottom: 4px; }
+.empty-act { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 14px; }
+.empty-act .primary { min-height: 46px; padding: 0 22px; }
+
+/* how it works */
+.fl { list-style: none; margin: 0; padding: 0; }
+.fl-step { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 26px; }
+.fl-step > b { display: block; font-size: 15px; }
+.fl-step > span { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.fl-step:not(:last-child)::after { content: ''; position: absolute; left: 50%; bottom: -21px; width: 2px; height: 15px; background: var(--muted); transform: translateX(-1px); }
+.fl-step:not(:last-child)::before { content: ''; position: absolute; left: 50%; bottom: -26px; border: 5px solid transparent; border-top-color: var(--muted); border-bottom: 0; transform: translateX(-5px); }
+.fl-pres { background: var(--accent-light); border-color: transparent; }
+.fl-pres > b { color: var(--accent-text); } .fl-pres > span { color: var(--accent-text); opacity: .85; }
+.fl-post { background: var(--blue-light); border-color: transparent; }
+.fl-post > b { color: var(--blue); } .fl-post > span { color: var(--blue); opacity: .85; }
+.fl-branch { margin-top: 10px; padding: 10px 12px; border: 1px dashed currentColor; border-radius: 10px; background: var(--card); color: var(--text); }
+.fl-branch i { display: block; font-style: normal; font-size: 12px; color: var(--muted); }
+.fl-branch b { display: block; font-size: 14px; margin-top: 2px; }
+.fl-branch span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fl-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+.wf-h { font-family: var(--display); font-size: 16px; font-weight: 600; margin: 18px 0 8px; }
+.wf { display: flex; flex-direction: column; align-items: stretch; }
+.wf-n { border-radius: 12px; padding: 10px 14px; text-align: center; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); }
+.wf-n b { font-size: 15px; font-weight: 600; }
+.wf-n span { font-size: 13px; opacity: .85; }
+.wf-a { background: var(--accent-light); color: var(--accent-text); }
+.wf-b { background: var(--blue-light); color: var(--blue); }
+.wf-c { background: var(--danger-light); color: var(--danger); }
+.wf-ar { text-align: center; color: var(--muted); font-size: 18px; line-height: 26px; }
+.wf-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wf-note { font-size: 13px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div id="view-onboard" style="display:none;">
+  <div class="ob">
+    <svg class="ob-rings" viewBox="0 0 120 120" width="84" height="84" aria-hidden="true">
+      <circle cx="60" cy="60" r="54" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="60" cy="60" r="38" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="60" cy="60" r="22" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      <circle cx="60" cy="60" r="8" fill="var(--accent)"/>
+    </svg>
+    <h1 class="ob-title">DropZone</h1>
+    <p class="ob-tag">Instagram follows people. DropZone follows places.</p>
+    <ol class="ob-steps">
+      <li><strong>Pick a zone</strong><span>Canteen, library, seminar hall.</span></li>
+      <li><strong>Prove you are there</strong><span>Use location, or scan the zone QR.</span></li>
+      <li><strong>Drop it</strong><span>Ask, offer or find. It fades unless people here echo it.</span></li>
+    </ol>
+    <label class="field-label" for="onboardEmail">College email</label>
+    <input type="email" id="onboardEmail" inputmode="email" autocomplete="email" placeholder="you@college.edu">
+    <div class="error" id="onboardErr" style="display:none;">Enter a valid email, like you@college.edu</div>
+    <button class="primary ob-btn" onclick="submitEmail()">Join your campus</button>
+    <div class="ob-fine">Used only if a drop is reported. Never shown to others. Each visit gets a new temporary name.</div>
+  </div>
+</div>
+
+<div id="view-main" style="display:none;">
+
+<div class="top">
+  <div>
+    <h1>DropZone</h1>
+    <div class="sub">Social media where the account is the place</div>
+  </div>
+  <select id="langSel" onchange="setLang(this.value)" style="width:auto; margin:0 6px 0 0; font-size:12px;"><option value="en">English</option><option value="hi">हिन्दी</option><option value="te">తెలుగు</option></select>
+  <select id="packSel" onchange="switchPack(this.value)" style="width:auto; margin:0; font-size:12px;"></select>
+  <button class="sm ghostbtn" onclick="switchEmail()" style="margin-left:6px;">Switch email</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="feed" onclick="switchTab('feed')">Zone</div>
+  <div class="tab" data-tab="mod" onclick="switchTab('mod')">Moderator</div>
+  <div class="tab" data-tab="privacy" onclick="switchTab('privacy')">Privacy</div>
+  <div class="tab" data-tab="flow" onclick="switchTab('flow')">How it works</div>
+</div>
+
+<div id="gateBox" class="card" style="display:none;">
+  <h2>Staff only</h2>
+  <div class="sub" style="margin-bottom:8px;">Enter the moderator PIN (demo only: production uses real staff login)</div>
+  <input type="text" id="modPin" inputmode="numeric" placeholder="PIN">
+  <div class="error" id="pinErr" style="display:none;">Wrong PIN</div>
+  <button class="primary" onclick="unlockMod()">Unlock</button>
+</div>
+
+<div id="view-feed">
+  <button id="fab" class="primary fab" onclick="fabDrop()">+ Drop</button>
+  <div id="placeRow" style="display:none; margin-bottom:10px;"><div class="sub" style="margin-bottom:6px;">Choose a place</div><div class="chips" id="placeChips"></div></div>
+  <div class="sub" style="margin-bottom:6px;">Live map: tap a zone</div>
+  <div class="map-grid" id="mapGrid"></div>
+
+  <div class="zone-bar"><select id="zoneSelect" onchange="syncZone()" aria-label="Zone"></select></div>
+
+  <div id="deniedNote" class="presence" role="status" aria-live="polite"></div>
+  <div class="sub qr-badge" id="qrBadge"></div>
+
+  <div id="qrPanel" class="card" style="display:none;">
+    <h2>Verify you are here with the zone QR</h2>
+    <div class="sub" style="margin-bottom:8px;">Each zone shows a QR that changes every minute, so a photo of it cannot be shared around. Scanning proves you are physically there, even indoors where GPS is weak or when location is denied.</div>
+    <button class="primary" style="width:100%;" onclick="startQrScan()">Scan with camera</button>
+    <video id="qrVideo" playsinline muted style="display:none; width:100%; border-radius:10px; margin-top:8px;"></video>
+    <div class="note" style="margin-top:8px;">Or scan with your phone's normal camera app. The link opens DropZone and verifies you automatically.</div>
+    <label class="field-label">Or paste the scanned link</label>
+    <input type="text" id="qrPaste" placeholder="Paste the link from the QR">
+    <button class="sm" onclick="verifyQr(document.getElementById('qrPaste').value)">Verify</button>
+    <button class="sm ghostbtn" onclick="demoScanQr()">Demo: simulate scanning this zone's QR</button>
+    <div class="error" id="qrErr" style="display:none; margin-top:8px;"></div>
+  </div>
+
+  <details class="demo-tools">
+    <summary>Demo tools</summary>
+    <label class="field-label" for="locScenario">Simulate location</label>
+    <select id="locScenario" onchange="syncZone()">
+      <option value="in_sel">Simulate: inside selected zone</option>
+      <option value="in_other">Simulate: inside a different zone</option>
+      <option value="lowacc">Simulate: low accuracy (indoors)</option>
+      <option value="outside">Simulate: outside the venue</option>
+      <option value="spoof">Simulate: spoofed / teleport</option>
+      <option value="denied">Simulate: permission denied</option>
+      <option value="gps">Use my real GPS</option>
+    </select>
+    <div id="entryLog" class="sub" style="margin:6px 0 4px;"></div>
+  </details>
+
+  <div id="vibeBox"></div>
+  <div id="storyBox"></div>
+
+  <div id="actionBox">
+    <div class="sub" style="margin-bottom:6px;">How is it here? Tap one.</div>
+    <div class="chips" id="pulseRow"></div>
+    <div class="old-new" style="display:none;"><button class="primary" onclick="toggleForm()">+ New drop</button></div>
+    <div id="formWrap" class="card" style="display:none;">
+      <h2>New drop</h2>
+      <label class="field-label">What kind of drop?</label>
+      <div class="chips" id="kindRow"></div>
+      <div id="kindExtra"></div>
+      <label class="field-label" id="textLabel">Say it in one line</label>
+      <input type="text" id="dText" maxlength="140" placeholder="e.g. Anyone have a charger near here?">
+      <div class="error" id="textErr" style="display:none;">Write something first</div>
+      <label class="field-label">Photo (optional, no faces or ID cards please)</label>
+      <input type="file" id="dPhoto" accept="image/*" onchange="previewPhoto()">
+      <img id="photoPreview" style="display:none; width:100%; max-height:160px; object-fit:cover; border-radius:10px; margin-top:8px;">
+      <label class="field-label">Lasts (each echo from someone here adds time)</label>
+      <select id="dTTL">
+        <option value="60000">1 minute (demo)</option>
+        <option value="1200000" selected>20 minutes</option>
+        <option value="3600000">1 hour</option>
+      </select>
+      <div class="error" id="rateErr" style="display:none;"></div>
+      <div class="row" style="margin-top:10px;">
+        <button class="ghostbtn" onclick="toggleForm()">Cancel</button>
+        <button class="primary" onclick="submitDrop()">Drop it here</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedList"></div>
+</div>
+
+<div id="view-mod" style="display:none;">
+  <h2>Moderator queue</h2>
+  <div class="sub" style="margin-bottom:12px;">Drops flagged by auto-screening or reported</div>
+  <div id="modList"></div>
+  <div id="bannedBox" class="banned-box"></div>
+  <div class="card" style="margin-top:12px;">
+    <h2>Official announcement</h2>
+    <div class="sub" style="margin-bottom:8px;">Organisers only. Pinned at the top of a zone with an Official label. Maximum 2 live per zone.</div>
+    <select id="offZone"></select>
+    <input type="text" id="offText" maxlength="140" placeholder="e.g. Round 3 starts at 1:00 in the Seminar Hall">
+    <select id="offTTL"><option value="1800000">30 minutes</option><option value="3600000" selected>1 hour</option><option value="10800000">3 hours</option></select>
+    <div class="error" id="offErr" style="display:none;"></div>
+    <button class="primary" onclick="postOfficial()">Post announcement</button>
+    <div id="offList"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h2>Zone QR display</h2>
+    <div class="sub" style="margin-bottom:8px;">Open this on the screen at the zone entrance. The code rotates every minute.</div>
+    <select id="qrZoneSel" onchange="renderZoneQr()"></select>
+    <div class="qr-wrap" id="qrShow"></div>
+    <div class="sub" id="qrCountdown" style="text-align:center; margin-top:6px;"></div>
+    <div class="note" id="qrFileNote" style="display:none; margin-top:8px;">This page is open as a local file, so the QR link will not open on other phones. Host the page (for example on GitHub Pages) before the live demo.</div>
+  </div>
+
+  <div class="card">
+    <h2>Safety tests</h2>
+    <div class="sub" style="margin-bottom:8px;">Measures zone-entry detection and spoof handling over simulated fixes, then runs the real rate limiter under burst traffic and the keyword screen on sample posts.</div>
+    <button class="primary" onclick="runSafetyTests()">Run safety tests</button>
+    <div id="testOut"></div>
+  </div>
+
+  <div class="card">
+    <h2>Demo data</h2>
+    <div class="sub" style="margin-bottom:8px;">Fills the current venue with clearly labelled sample drops and pulses so the live map has something to show.</div>
+    <div class="row">
+      <button class="sm" onclick="loadDemo()">Load sample activity</button>
+      <button class="sm ghostbtn" onclick="clearDemo()">Remove sample activity</button>
+    </div>
+  </div>
+</div>
+
+<div id="view-flow" style="display:none;" class="flow">
+  <h2>How DropZone works</h2>
+  <div class="sub" style="margin-bottom:14px;">Three parts: join, post, moderate.</div>
+  <ol class="fl" style="display:none"></ol>
+  <h3 class="wf-h">1. Join and unlock a zone</h3>
+  <div class="wf"><div class="wf-n wf-a"><b>Open the website link</b><span>Phone or laptop, https</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-a"><b>Sign in with college email</b><span>Gets a temporary guest name</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-a"><b>Pick venue and zone</b><span>Main Block, Hostel, Canteen</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-pair"><div class="wf-n wf-b"><b>Location check</b><span>Inside the zone</span></div><div class="wf-n wf-b"><b>Zone QR scan</b><span>Rotating code</span></div></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-b"><b>Zone unlocked</b><span>Read, post, echo, reply</span></div><div class="wf-note">If neither check passes, the person sees only the zone mood. Posts stay blurred.</div></div>
+  <h3 class="wf-h">2. Life of a drop</h3>
+  <div class="wf"><div class="wf-n wf-a"><b>Post a drop</b><span>Text, photo, expiry time</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-c"><b>Safety screen</b><span>Scam words, 3 posts per hour</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-pair"><div class="wf-n wf-b"><b>Goes live</b><span>Clean post</span></div><div class="wf-n wf-c"><b>Held back</b><span>Moderator decides</span></div></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-a"><b>People in the zone respond</b><span>Echo, reply, claim, report</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-a"><b>Drop expires and is deleted</b><span>Echoes add time, up to 4</span></div><div class="wf-note">Each echo adds half of the original time. Drops with 2 or more echoes are kept in the 24-hour zone story.</div></div>
+  <h3 class="wf-h">3. Reports and moderation</h3>
+  <div class="wf"><div class="wf-n wf-a"><b>Someone reports a drop</b><span>Pick a reason</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-c"><b>Drop is hidden</b><span>Scam: at once. Else: 2 reports</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-n wf-a"><b>Moderator reviews</b><span>PIN-protected tab</span></div><div class="wf-ar" aria-hidden="true">&#8595;</div><div class="wf-pair"><div class="wf-n wf-b"><b>Restore</b><span>Back in the feed</span></div><div class="wf-n wf-c"><b>Remove</b><span>Strike for poster</span></div></div><div class="wf-note">A poster with 4 strikes is removed from DropZone.</div></div>
+  <div class="wf-note" style="margin-top:14px;">Behind the scenes: every phone and laptop reads the same shared database, so a drop posted on one device appears live on the others. Your email is turned into a scrambled ID before anything is saved.</div>
+</div>
+
+<div id="view-privacy" style="display:none;" class="privacy">
+  <h2>Privacy notice</h2>
+  <p><strong>What DropZone is.</strong> A feed that belongs to a place. Whoever is physically in a zone can read and add to it. There are no followers and no permanent profiles. Each visit uses a temporary, rotating name.</p>
+  <p><strong>Location.</strong> Location is opt-in. The app compares one position fix with zone circles in memory and keeps only the zone ID. Coordinates are never saved or shown, and nobody can see where an individual person is. You can leave a zone or deny location at any time, which locks posting.</p>
+  <p><strong>How presence is checked.</strong> A fix worse than 50 m accuracy is an estimate and gives a read-only view. A position that jumps faster than is physically possible is treated as unverified. You can also scan the rotating QR at a zone entrance. These checks reduce spoofing but do not eliminate it.</p>
+  <p><strong>Expiry.</strong> Every drop has a timer, and echoes from people in the zone extend it up to a limit. When the timer ends the drop disappears from the live feed. This does not guarantee removal from server logs, backups, or any screenshot someone took before it expired.</p>
+  <p><strong>Zone story.</strong> Drops that earn two or more echoes, and anonymous mood counts, are kept for 24 hours so a zone can show a recap, then deleted. Poster names are not kept.</p>
+  <p><strong>Official announcements.</strong> Staff can pin labelled announcements, limited to 2 live per zone.</p>
+  <p><strong>Offers and joins.</strong> Claiming an offer or joining a group records only your temporary name, and the record disappears with the drop.</p>
+  <p><strong>Replies.</strong> People verified in a zone can reply to a drop. Replies are screened automatically, limited to 3 per person per drop, and disappear when the drop expires. Outside the zone you see only the reply count.</p>
+  <p><strong>Ghost view.</strong> If you are not in a zone you can see its mood and the number of live drops, but drop contents and photos stay hidden.</p>
+  <p><strong>Moderation.</strong> Every drop passes an automatic keyword and scam screen. Flagged drops wait for a human moderator. Any drop can be reported: scam and privacy reports hide it at once, other reports need two different people. After three confirmed violations a fourth removes that identity from posting.</p>
+  <p><strong>Email.</strong> Used at entry only to hold reporters and posters accountable. It stays on your device. Only a scrambled ID is saved with your drops, and it is never shown or used for marketing.</p>
+  <p><strong>Zone summary.</strong> The mood summary on each zone is generated on your device from live pulses and drops. Drops and pulses are saved in a shared database so people in the zone see them live.</p>
+  <p><strong>Minors.</strong> If used in a school or youth event, posting should be limited for users identified as minors and no precise location should ever be shown.</p>
+  <p><strong>Sponsored content and emergencies.</strong> This prototype has no sponsored posts. Any future sponsored drop must carry a Sponsored label and a frequency cap. DropZone makes no emergency promises and never implies emergency services were contacted.</p>
+</div>
+
+</div>
+
+<script>
+// ---------- minimal QR encoder (byte mode, ECC L/M, versions 1-10) ----------
+const QRGen = (function () {
+  const ECC = { L: { fmt: 1, cw: [-1,7,10,15,20,26,18,20,24,30,18], bl: [-1,1,1,1,1,1,2,2,2,2,4] },
+                M: { fmt: 0, cw: [-1,10,16,26,18,24,16,18,22,22,26], bl: [-1,1,1,1,2,2,4,4,4,5,5] } };
+  const bit = (x, i) => ((x >>> i) & 1) !== 0;
+  function rawModules(v) { let r = (16 * v + 128) * v + 64; if (v >= 2) { const a = Math.floor(v / 7) + 2; r -= (25 * a - 10) * a - 55; if (v >= 7) r -= 36; } return r; }
+  function dataCw(v, e) { return Math.floor(rawModules(v) / 8) - e.cw[v] * e.bl[v]; }
+  function mul(x, y) { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; } return z; }
+  function divisor(d) { const r = new Array(d).fill(0); r[d - 1] = 1; let root = 1; for (let i = 0; i < d; i++) { for (let j = 0; j < d; j++) { r[j] = mul(r[j], root); if (j + 1 < d) r[j] ^= r[j + 1]; } root = mul(root, 2); } return r; }
+  function remainder(data, div) { const r = div.map(() => 0); for (const b of data) { const f = b ^ r.shift(); r.push(0); div.forEach((c, i) => { r[i] ^= mul(c, f); }); } return r; }
+  function interleave(data, v, e) {
+    const nb = e.bl[v], el = e.cw[v], raw = Math.floor(rawModules(v) / 8), nShort = nb - raw % nb, shortLen = Math.floor(raw / nb);
+    const blocks = [], div = divisor(el);
+    for (let i = 0, k = 0; i < nb; i++) {
+      const dat = data.slice(k, k + shortLen - el + (i < nShort ? 0 : 1)); k += dat.length;
+      const ecc = remainder(dat, div); if (i < nShort) dat.push(0); blocks.push(dat.concat(ecc));
+    }
+    const out = [];
+    for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== shortLen - el || j >= nShort) out.push(b[i]); });
+    return out;
+  }
+  function make(text, level) {
+    const e = ECC[level || 'M'];
+    const bytes = Array.from(new TextEncoder().encode(text));
+    let v = 1;
+    for (; v <= 10; v++) { const cap = dataCw(v, e) * 8; if (4 + (v <= 9 ? 8 : 16) + bytes.length * 8 <= cap) break; }
+    if (v > 10) throw new Error('QR payload too long');
+    const bits = [];
+    const put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    put(4, 4); put(bytes.length, v <= 9 ? 8 : 16); bytes.forEach(b => put(b, 8));
+    const capBits = dataCw(v, e) * 8;
+    put(0, Math.min(4, capBits - bits.length)); while (bits.length % 8) bits.push(0);
+    for (let p = 0xEC; bits.length < capBits; p ^= 0xEC ^ 0x11) put(p, 8);
+    const data = []; for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+    const all = interleave(data, v, e);
+    const size = v * 4 + 17;
+    const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+    const fn = Array.from({ length: size }, () => new Array(size).fill(false));
+    const setFn = (x, y, d) => { mod[y][x] = d; fn[y][x] = true; };
+    for (let i = 0; i < size; i++) { setFn(6, i, i % 2 === 0); setFn(i, 6, i % 2 === 0); }
+    const finder = (x, y) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)), xx = x + dx, yy = y + dy; if (xx >= 0 && xx < size && yy >= 0 && yy < size) setFn(xx, yy, d !== 2 && d !== 4); } };
+    finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+    let pos = [];
+    if (v > 1) { const n = Math.floor(v / 7) + 2, step = v === 32 ? 26 : Math.ceil((v * 4 + 4) / (n * 2 - 2)) * 2; pos = [6]; for (let p = size - 7; pos.length < n; p -= step) pos.splice(1, 0, p); }
+    pos.forEach((px, i) => pos.forEach((py, j) => {
+      if ((i === 0 && j === 0) || (i === 0 && j === pos.length - 1) || (i === pos.length - 1 && j === 0)) return;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setFn(px + dx, py + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }));
+    const drawFormat = mask => {
+      const d = (e.fmt << 3) | mask; let r = d; for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+      const b = ((d << 10) | r) ^ 0x5412;
+      for (let i = 0; i <= 5; i++) setFn(8, i, bit(b, i));
+      setFn(8, 7, bit(b, 6)); setFn(8, 8, bit(b, 7)); setFn(7, 8, bit(b, 8));
+      for (let i = 9; i < 15; i++) setFn(14 - i, 8, bit(b, i));
+      for (let i = 0; i < 8; i++) setFn(size - 1 - i, 8, bit(b, i));
+      for (let i = 8; i < 15; i++) setFn(8, size - 15 + i, bit(b, i));
+      setFn(8, size - 8, true);
+    };
+    drawFormat(0);
+    if (v >= 7) {
+      let r = v; for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+      const b = (v << 12) | r;
+      for (let i = 0; i < 18; i++) { const c = bit(b, i), a = size - 11 + i % 3, k = Math.floor(i / 3); setFn(a, k, c); setFn(k, a, c); }
+    }
+    let i = 0;
+    for (let right = size - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+        const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vert : vert;
+        if (!fn[y][x] && i < all.length * 8) { mod[y][x] = bit(all[i >>> 3], 7 - (i & 7)); i++; }
+      }
+    }
+    const applyMask = m => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      let inv; switch (m) { case 0: inv = (x + y) % 2 === 0; break; case 1: inv = y % 2 === 0; break; case 2: inv = x % 3 === 0; break; case 3: inv = (x + y) % 3 === 0; break;
+        case 4: inv = (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; break; case 5: inv = x * y % 2 + x * y % 3 === 0; break; case 6: inv = (x * y % 2 + x * y % 3) % 2 === 0; break; default: inv = ((x + y) % 2 + x * y % 3) % 2 === 0; }
+      if (!fn[y][x] && inv) mod[y][x] = !mod[y][x]; } };
+    const penalty = () => {
+      let p = 0;
+      for (let a = 0; a < size; a++) for (const horiz of [true, false]) { let run = 1; for (let b = 1; b < size; b++) { const cur = horiz ? mod[a][b] : mod[b][a], prev = horiz ? mod[a][b - 1] : mod[b - 1][a]; if (cur === prev) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; } }
+      for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = mod[y][x]; if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) p += 3; }
+      let dark = 0; mod.forEach(r => r.forEach(c => { if (c) dark++; }));
+      p += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+      return p;
+    };
+    let best = 0, bestP = 1e9;
+    for (let m = 0; m < 8; m++) { applyMask(m); drawFormat(m); const p = penalty(); if (p < bestP) { bestP = p; best = m; } applyMask(m); }
+    applyMask(best); drawFormat(best);
+    return { size, mod };
+  }
+  function svg(text, px) {
+    const q = make(text, 'M'), n = q.size + 8; let d = '';
+    for (let y = 0; y < q.size; y++) for (let x = 0; x < q.size; x++) if (q.mod[y][x]) d += 'M' + (x + 4) + ',' + (y + 4) + 'h1v1h-1z';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + n + ' ' + n + '" width="' + (px || 220) + '" height="' + (px || 220) + '" shape-rendering="crispEdges" role="img" aria-label="Zone QR code"><rect width="' + n + '" height="' + n + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+  }
+  return { make, svg };
+})();
+
+
+// ---------- venue packs ----------
+const PACKS = {
+  viit: { name: 'VIIT Campus', zones: ['Main Block','Dharitri Block','Pharma Block','Hostel','Sagara Block','Canteen','Food Bites'], geo: [[0,0],[-80,-70],[-80,-140],[-80,-210],[80,-70],[0,-70],[0,-140]] },
+  station: { name: 'Railway Station', zones: ['Platform 1','Platform 2','Ticket Hall','Food Court','Parking','Waiting Hall'], geo: [[-80,0],[0,0],[80,0],[-80,-70],[0,-70],[80,-70]] },
+  event: { name: 'Tech Park / Event', zones: ['Registration','Main Stage','Expo Floor','Food Court','Parking','Workshop Room'], geo: [[-80,0],[0,0],[80,0],[-80,-70],[0,-70],[80,-70]] },
+  mall: { name: 'Shopping Mall', zones: ['Entrance','Fashion Floor','Electronics','Food Court','Cinema','Parking'], geo: [[-80,0],[0,0],[80,0],[-80,-70],[0,-70],[80,-70]] },
+  restaurant: { name: 'Restaurants', zones: ['Mitchy','Delicious','Gautam','Spice Garden','Coastal Kitchen','Tiffin Corner'], geo: [[-80,0],[0,0],[80,0],[-80,-70],[0,-70],[80,-70]] },
+  cinema: { name: 'Cinemas', zones: ['IMAX','Lakshmi','Priya','City Multiplex','Star Cinemas','Galaxy Theatre'], geo: [[-80,0],[0,0],[80,0],[-80,-70],[0,-70],[80,-70]] },
+  beach: { name: 'Beaches', zones: ['Rishikonda','RK Beach','Yarada','Bheemili','Lawsons Bay','Appikonda'], geo: [[-80,0],[0,0],[80,0],[-80,-70],[0,-70],[80,-70]] }
+};
+// two-level venues: place (e.g. Mitchy) -> areas (e.g. Dining Hall). Zone id = "Place · Area".
+const AREA_SETS = {
+  restaurant: ['Dining Hall', 'Family Section', 'Takeaway Counter', 'Parking'],
+  cinema: ['Lobby', 'Ticket Counter', 'Snack Counter', 'Screen 1', 'Screen 2', 'Parking'],
+  beach: ['Entrance', 'Food Stalls', 'Shoreline', 'Viewpoint', 'Play Area', 'Parking']
+};
+Object.keys(AREA_SETS).forEach(k => {
+  const P = PACKS[k], names = P.zones; P.places = {}; P.zones = []; P.geo = [];
+  names.forEach((pl, pi) => {
+    P.places[pl] = [];
+    AREA_SETS[k].forEach((a, ai) => { const id = pl + ' \u00b7 ' + a; P.places[pl].push(id); P.zones.push(id); P.geo.push([(ai % 3 - 1) * 80, -Math.floor(ai / 3) * 70 - pi * 400]); });
+  });
+});
+let packKey = 'viit', ZONES = [], ZONE_GEO = {}, placeKey = null;
+function placeOf(z) { return z.indexOf(' \u00b7 ') >= 0 ? z.split(' \u00b7 ')[0] : null; }
+function areaOf(z) { return z.indexOf(' \u00b7 ') >= 0 ? z.split(' \u00b7 ').slice(1).join(' \u00b7 ') : z; }
+function visibleZones() { const P = PACKS[packKey]; return P.places && P.places[placeKey] ? P.places[placeKey] : ZONES; }
+function switchPlace(p) { placeKey = p; populateZones(); syncZone(); }
+function renderPlaceChips() {
+  const P = PACKS[packKey], box = document.getElementById('placeChips'); if (!box) return;
+  if (!P.places) { box.innerHTML = ''; return; }
+  box.innerHTML = Object.keys(P.places).map(pl => {
+    const sc = P.places[pl].reduce((a, z) => a + busyScore(z), 0);
+    return '<span class="chip' + (pl === placeKey ? ' on' : '') + '" data-p="' + escapeHtml(pl) + '" onclick="switchPlace(this.dataset.p)">' + escapeHtml(pl) +
+      (sc > 0 ? ' <span class="tag warn" style="margin-left:4px;">Busy</span>' : (sc < 0 ? ' <span class="tag blue" style="margin-left:4px;">Calm</span>' : '')) + '</span>';
+  }).join('');
+}
+function applyPack(k) { if (!PACKS[k]) k = 'viit'; packKey = k; const P = PACKS[k]; placeKey = P.places ? Object.keys(P.places)[0] : null; ZONES = P.zones; ZONE_GEO = {}; P.zones.forEach((z, i) => { ZONE_GEO[z] = P.geo[i]; }); try { localStorage.setItem('dz_pack', k); } catch (e) {} }
+
+// ---------- constants ----------
+const ECHO_CAP = 4, PULSE_WINDOW = 20 * 60000, RATE_LIMIT = 3, RATE_WINDOW = 3600000, REPORT_THRESHOLD = 2;
+const SEVERE = ['Scam / fraud', 'Privacy concern'];
+const KINDS = { ask: 'Ask', offer: 'Offer', heads: 'Heads-up', look: 'Looking', join: 'Join' };
+const KIND_CLASS = { ask: 'blue', offer: '', heads: 'warn', look: 'pink', join: 'blue' };
+const PULSES = ['Crowded', 'Quiet', 'Loud', 'Long queue', 'Wi-Fi slow', 'Food available', 'No seats', 'Seats free'];
+const FLAG_WORDS = ["idiot","stupid","hate","kill","scam","fraud"];
+const SCAM_PATTERNS = [/\bupi\b/i, /\bpay\s+rs\.?\s*\d+/i, /bit\.ly|tinyurl|t\.me\//i, /\bfree\s+(phone|recharge|gift)/i, /\botp\b/i];
+
+// ---------- state ----------
+let drops = [], pulses = [], strikes = {}, blockedByMe = [];
+let myId = '', myName = '', currentKind = 'ask', reportingId = null, lastActionNote = null;
+let isMod = false, pendingTab = null;
+function pseudonym() { return 'Guest-' + Math.random().toString(16).slice(2, 6).toUpperCase(); }
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+function zoneSel() { return document.getElementById('zoneSelect').value; }
+function loadJSON(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return false; } return true; }
+function loadPackData() { drops = loadJSON('dz_drops_' + packKey, []); pulses = loadJSON('dz_pulses_' + packKey, []); }
+function saveDrops() { if (!saveJSON('dz_drops_' + packKey, drops)) { drops.forEach(p => { p.photo = null; }); lastActionNote = 'Storage was full, so photos were removed to keep drops saved.'; saveJSON('dz_drops_' + packKey, drops); } }
+function savePulses() { saveJSON('dz_pulses_' + packKey, pulses); }
+function saveStrikes() { saveJSON('dz_strikes', strikes); }
+function saveBlocked() { saveJSON('dz_blocked', blockedByMe); }
+function note(m) { lastActionNote = m; renderFeed(); }
+
+// ---------- onboarding ----------
+function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function submitEmail() {
+  const v = document.getElementById('onboardEmail').value.trim();
+  if (!isValidEmail(v)) { document.getElementById('onboardErr').style.display = ''; return; }
+  try { localStorage.setItem('dz_email', v); } catch (e) {}
+  enterApp(v);
+}
+function switchEmail() { try { localStorage.removeItem('dz_email'); } catch (e) {} location.reload(); }
+function checkOnboarding() {
+  let saved = null; try { saved = localStorage.getItem('dz_email'); } catch (e) {}
+  if (saved) enterApp(saved); else document.getElementById('view-onboard').style.display = '';
+}
+function enterApp(email) {
+  myId = 'u' + String(h53('dz-id:' + email.trim().toLowerCase())); myName = pseudonym();
+  document.getElementById('view-onboard').style.display = 'none';
+  document.getElementById('view-main').style.display = '';
+  document.getElementById('packSel').innerHTML = Object.keys(PACKS).map(k => '<option value="' + k + '"' + (k === packKey ? ' selected' : '') + '>' + PACKS[k].name + '</option>').join('');
+  populateZones(); buildKindRow(); syncZone(); handleQrParam();
+}
+function populateZones() {
+  document.getElementById('zoneSelect').innerHTML = visibleZones().map(z => '<option value="' + escapeHtml(z) + '">' + escapeHtml(areaOf(z)) + '</option>').join('');
+  document.getElementById('placeRow').style.display = PACKS[packKey].places ? '' : 'none';
+  renderPlaceChips();
+}
+function switchPack(k) { applyPack(k); loadPackData(); populateZones(); document.getElementById('packSel').value = packKey; qrState = null; syncZone(); }
+
+// ---------- location model ----------
+const ORIGIN = { lat: 17.7, lng: 83.17 };
+const ZONE_RADIUS = 35, ACC_LIMIT = 50, MAX_SPEED = 50;
+let locState = { status: 'unknown', zone: null, msg: '' };
+let prevZone = null, lastReal = null, entryEvents = [];
+function pt(e, n) { return { lat: ORIGIN.lat + n / 111320, lng: ORIGIN.lng + e / (111320 * Math.cos(ORIGIN.lat * Math.PI / 180)) }; }
+function distM(a, b) { const R = 6371000, r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lng - a.lng) * r; const h = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
+function zoneAt(p) { let best = null, bd = 1e12; for (const z in ZONE_GEO) { const d = distM(p, pt(ZONE_GEO[z][0], ZONE_GEO[z][1])); if (d < bd) { bd = d; best = z; } } return { zone: best, dist: bd }; }
+function jit(c, m) { return [c[0] + (Math.random() * 2 - 1) * m, c[1] + (Math.random() * 2 - 1) * m]; }
+function classify(f) {
+  const L = { status: 'outside', zone: null, acc: f.acc || null, msg: '' };
+  let spoofMsg = '';
+  if (f.denied) { L.status = 'denied'; }
+  else {
+    let spoof = false;
+    if (f.prev) { const d = distM(f.prev, f), v = d / Math.max(f.prev.secAgo, 1); if (v > MAX_SPEED) { spoof = true; spoofMsg = 'Position jumped about ' + (d / 1000).toFixed(1) + ' km in ' + Math.round(f.prev.secAgo) + ' s, which is physically impossible. Treated as unverified.'; } }
+    if (spoof) L.status = 'spoofed';
+    else { const z = zoneAt(f); if (f.acc > ACC_LIMIT) { L.status = 'inaccurate'; L.zone = z.dist <= ZONE_RADIUS + f.acc ? z.zone : null; } else if (z.dist <= ZONE_RADIUS) { L.status = 'inside'; L.zone = z.zone; } }
+  }
+  const texts = {
+    denied: 'Location permission denied. Reading and posting are locked, and nothing is collected.',
+    spoofed: spoofMsg,
+    inaccurate: 'Low-accuracy estimate (about ' + Math.round(L.acc || 0) + ' m). Presence cannot be confirmed' + (L.zone ? ', nearest zone ' + L.zone : '') + '. Read-only view; posting and echoing are disabled.',
+    outside: 'You are outside every zone. You can see each zone\'s mood but not its drops.',
+    inside: 'Inside ' + L.zone + ' (accuracy about ' + Math.round(L.acc || 0) + ' m). Only the zone ID is kept; coordinates are never stored or shown.'
+  };
+  L.msg = texts[L.status];
+  return L;
+}
+function applyFix(f) {
+  locState = classify(f);
+  const z = locState.status === 'inside' ? locState.zone : null;
+  if (z !== prevZone) {
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (prevZone) entryEvents.unshift('Left ' + prevZone + ' \u00b7 ' + t);
+    if (z) entryEvents.unshift('Entered ' + z + ' \u00b7 ' + t);
+    entryEvents = entryEvents.slice(0, 6); prevZone = z;
+  }
+  updateLocUI();
+}
+function evaluateLocation() {
+  const sc = document.getElementById('locScenario').value, sel = zoneSel(), c = ZONE_GEO[sel];
+  if (sc === 'gps') return realFix();
+  if (sc === 'denied') return applyFix({ denied: true });
+  if (sc === 'in_sel') return applyFix({ ...pt(...jit(c, 15)), acc: 12 });
+  if (sc === 'in_other') { const o = ZONES[(ZONES.indexOf(sel) + 1) % ZONES.length]; return applyFix({ ...pt(...jit(ZONE_GEO[o], 15)), acc: 10 }); }
+  if (sc === 'lowacc') return applyFix({ ...pt(...jit(c, 40)), acc: 180 });
+  if (sc === 'outside') return applyFix({ ...pt(600, 400), acc: 10 });
+  if (sc === 'spoof') return applyFix({ ...pt(...jit(c, 10)), acc: 5, prev: { ...pt(5000, 3000), secAgo: 4 } });
+}
+function realFix() {
+  if (!navigator.geolocation) return applyFix({ denied: true });
+  navigator.geolocation.getCurrentPosition(pos => {
+    const f = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }, now = Date.now();
+    if (lastReal && now - lastReal.t >= 1000) f.prev = { lat: lastReal.lat, lng: lastReal.lng, secAgo: (now - lastReal.t) / 1000 };
+    lastReal = { lat: f.lat, lng: f.lng, t: now }; applyFix(f);
+  }, () => applyFix({ denied: true }), { enableHighAccuracy: true, timeout: 8000 });
+}
+function canRead() { const sel = zoneSel(); return (locState.status === 'inside' && locState.zone === sel) || locState.status === 'inaccurate' || qrOk(sel); }
+function canPost() { const sel = zoneSel(); return (locState.status === 'inside' && locState.zone === sel) || qrOk(sel); }
+function syncZone() { evaluateLocation(); }
+function goZone(z) { if (PACKS[packKey].places && placeOf(z) && placeOf(z) !== placeKey) { placeKey = placeOf(z); populateZones(); } document.getElementById('zoneSelect').value = z; document.getElementById('locScenario').value = 'in_sel'; syncZone(); }
+function updateLocUI() {
+  const sel = zoneSel(), L = locState;
+  let html = '<strong>' + L.status.replace('_', ' ') + '</strong> \u00b7 ' + escapeHtml(L.msg);
+  if (qrOk(sel)) html += ' <span class="tag blue">QR-verified here</span>';
+  if (L.status === 'inside' && L.zone !== sel) html += ' <button class="sm" style="margin-left:6px;" data-z="' + escapeHtml(L.zone) + '" onclick="goZone(this.dataset.z)">Go to ' + escapeHtml(L.zone) + '</button>';
+  document.getElementById('deniedNote').innerHTML = html;
+  document.getElementById('qrBadge').textContent = qrActive() ? 'QR-verified at ' + qrState.zone + ' until ' + new Date(qrState.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  document.getElementById('entryLog').innerHTML = entryEvents.length ? '<strong>Zone events</strong> (newest first)<ul style="margin:4px 0 0 18px;padding:0;">' + entryEvents.map(e => '<li>' + escapeHtml(e) + '</li>').join('') + '</ul>' : '';
+  renderAll();
+}
+
+// ---------- drops ----------
+function expiresAt(p) { const n = Math.min((p.echoes || []).length, ECHO_CAP), base = p.createdAt + p.ttlMs + n * Math.round(p.ttlMs / 2); return p.resolvedAt ? Math.min(base, p.resolvedAt + 120000) : base; }
+function maxLife(p) { return p.ttlMs + ECHO_CAP * Math.round(p.ttlMs / 2); }
+function liveDrops(zone) { const now = Date.now(); return drops.filter(p => p.zone === zone && p.status === 'visible' && expiresAt(p) > now).sort((a, b) => (b.kind === 'official') - (a.kind === 'official')); }
+function fmtLeft(ms) { if (ms <= 0) return 'expired'; const s = Math.ceil(ms / 1000); if (s < 120) return s + ' s left'; return Math.ceil(s / 60) + ' min left'; }
+function purgeExpired() { const now = Date.now(), before = drops.length; drops = drops.filter(p => expiresAt(p) > now || p.status === 'ai_flagged' || p.status === 'reported'); pulses = pulses.filter(x => now - x.t < PULSE_WINDOW); if (before !== drops.length) { saveDrops(); savePulses(); lastActionNote = (before - drops.length) + ' expired drop(s) removed from this device. In a real deployment, server logs, backups and screenshots may still exist.'; } }
+function aiScreen(text) { return FLAG_WORDS.some(w => new RegExp('\\b' + w + '\\b', 'i').test(text)) || SCAM_PATTERNS.some(r => r.test(text)); }
+function recentCountFor(list, id, zone, now) { return list.filter(p => (p.posterId) === id && p.zone === zone && (now - p.createdAt) < RATE_WINDOW).length; }
+function buildKindRow() { document.getElementById('kindRow').innerHTML = Object.keys(KINDS).filter(k => k !== 'official').map(k => '<span class="chip' + (k === currentKind ? ' on' : '') + '" onclick="setKind(\'' + k + '\')">' + KINDS[k] + '</span>').join(''); }
+function setKind(k) { currentKind = k; buildKindRow(); buildExtra(); }
+function toggleForm() { const f = document.getElementById('formWrap'); f.style.display = f.style.display === 'none' ? '' : 'none'; }
+function previewPhoto() {
+  const f = document.getElementById('dPhoto').files[0], img = document.getElementById('photoPreview');
+  if (!f) { img.style.display = 'none'; return; }
+  const r = new FileReader(); r.onload = () => { img.src = r.result; img.style.display = ''; }; r.readAsDataURL(f);
+}
+function shrink(dataUrl, cb) {
+  const img = new Image();
+  img.onload = () => { const k = Math.min(1, 640 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', 0.6)); };
+  img.onerror = () => cb(dataUrl); img.src = dataUrl;
+}
+function submitDrop() {
+  const re = document.getElementById('rateErr'); re.style.display = 'none';
+  if (!canPost()) { re.textContent = 'Posting is blocked: ' + locState.msg; re.style.display = ''; return; }
+  if ((strikes[myId] || 0) >= 4) { re.textContent = 'This identity has been removed from DropZone after repeated violations.'; re.style.display = ''; return; }
+  const text = document.getElementById('dText').value.trim(), err = document.getElementById('textErr');
+  if (!text) { err.style.display = ''; return; } err.style.display = 'none';
+  const zone = zoneSel(), now = Date.now();
+  if (recentCountFor(drops, myId, zone, now) >= RATE_LIMIT) { re.textContent = 'Rate limit reached: max ' + RATE_LIMIT + ' drops per hour per zone for one identity.'; re.style.display = ''; return; }
+  const ttlMs = parseInt(document.getElementById('dTTL').value, 10), flagged = aiScreen(text);
+  const viaQr = qrOk(zone) && !(locState.status === 'inside' && locState.zone === zone);
+  const fin = photo => {
+    drops.unshift({ id: Date.now() + Math.floor(Math.random() * 1000), zone, kind: currentKind, meta: buildMeta(), text, photo: photo || null, createdAt: Date.now(), ttlMs, status: flagged ? 'ai_flagged' : 'visible', poster: myName, posterId: myId, echoes: [], presence: viaQr ? 'qr' : 'gps' });
+    saveDrops();
+    document.getElementById('dText').value = ''; document.getElementById('dPhoto').value = ''; document.getElementById('photoPreview').style.display = 'none';
+    toggleForm();
+    lastActionNote = flagged ? 'Your drop was held for moderator review before it appears.' : 'Dropped. It lasts ' + Math.round(ttlMs / 60000) + ' min, and echoes from people here add time.';
+    renderAll();
+  };
+  const f = document.getElementById('dPhoto').files[0];
+  if (f) { const r = new FileReader(); r.onload = () => shrink(r.result, fin); r.readAsDataURL(f); } else fin(null);
+}
+function echoDrop(id) {
+  const p = drops.find(x => x.id === id); if (!p) return;
+  if (!canPost()) return note('Echoing needs verified presence in this zone.');
+  if (p.posterId === myId) return note('You cannot echo your own drop.');
+  p.echoes = p.echoes || [];
+  if (p.echoes.includes(myId)) return note('You already echoed this drop.');
+  p.echoes.push(myId); saveDrops();
+  note(p.echoes.length >= ECHO_CAP ? 'Echoed. This drop has reached its maximum lifespan.' : 'Echoed. This drop now lasts longer.');
+  renderAll();
+}
+function deleteDrop(id) { drops = drops.filter(p => p.id !== id); saveDrops(); renderAll(); }
+function blockPoster(name) { if (!blockedByMe.includes(name)) { blockedByMe.push(name); saveBlocked(); } renderAll(); }
+function openReport(id) { reportingId = id; renderFeed(); }
+function cancelReport() { reportingId = null; renderFeed(); }
+function confirmReport(id) {
+  const reason = document.getElementById('reasonSel_' + id).value, p = drops.find(x => x.id === id);
+  reportingId = null;
+  if (!p || p.status !== 'visible') return renderFeed();
+  if (p.posterId === myId) return note('You cannot report your own drop. Use Delete instead.');
+  p.reports = p.reports || [];
+  if (p.reports.some(r => r.by === myId)) return note('You already reported this drop.');
+  p.reports.push({ by: myId, reason });
+  if (SEVERE.includes(reason) || p.reports.length >= REPORT_THRESHOLD) { p.status = 'reported'; p.reportReason = reason; lastActionNote = 'Report submitted. The drop is hidden and sent to the moderator queue.'; }
+  else lastActionNote = 'Report recorded (' + p.reports.length + '/' + REPORT_THRESHOLD + '). Scam and privacy reports hide a drop at once; other reports need a second person, to limit report-bombing.';
+  saveDrops(); renderAll();
+}
+
+// ---------- pulses, vibe, map ----------
+function addPulse(tag) {
+  if (!canPost()) return note('Pulses need verified presence in this zone.');
+  const zone = zoneSel(), now = Date.now();
+  if (pulses.some(x => x.zone === zone && x.tag === tag && x.by === myId && now - x.t < 10 * 60000)) return note('You already reported "' + tag + '" here in the last 10 minutes.');
+  const OPP = { 'Crowded': ['Quiet'], 'Quiet': ['Crowded', 'Loud'], 'Loud': ['Quiet'], 'No seats': ['Seats free'], 'Seats free': ['No seats'] };
+  const swapped = pulses.filter(x => x.zone === zone && x.by === myId && now - x.t < PULSE_WINDOW );
+  if (swapped.length) pulses = pulses.filter(x => !swapped.includes(x));
+  pulses.push({ zone, tag, t: now, by: myId }); savePulses();
+  note(swapped.length ? 'Pulse updated: ' + swapped.map(x => x.tag).join(', ') + ' replaced by ' + tag + '.' : 'Pulse added: ' + tag + '. Thanks, it helps everyone in this zone.'); renderAll();
+}
+function buildVibe(zone) {
+  const now = Date.now(), ds = liveDrops(zone).filter(p => !blockedByMe.includes(p.poster));
+  const ps = pulses.filter(x => x.zone === zone && now - x.t < PULSE_WINDOW);
+  const counts = {}; ps.forEach(x => { counts[x.tag] = (counts[x.tag] || 0) + 1; });
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 2);
+  const kinds = {}; ds.forEach(d => { kinds[d.kind] = (kinds[d.kind] || 0) + 1; });
+  const best = ds.slice().sort((a, b) => (b.echoes || []).length - (a.echoes || []).length)[0];
+  const CONF = { 'Crowded': ['Quiet'], 'Quiet': ['Crowded', 'Loud'], 'Loud': ['Quiet'] };
+  const tie = top.length > 1 && top[0][1] === top[1][1] && (CONF[top[0][0]] || []).includes(top[1][0]);
+  const mood = tie ? 'Mixed' : (top.length ? top[0][0] : (ds.length ? 'Active' : 'No reports'));
+  const shown = tie ? top : (top.length > 1 && (CONF[top[0][0]] || []).includes(top[1][0]) ? top.slice(0, 1) : top);
+  const headline = tie ? 'Mixed reports: ' + top.map(([t, c]) => t + ' (' + c + ')').join(' vs ') : (top.length ? shown.map(([t, c]) => t + ' (' + c + ')').join(' and ') : (ds.length ? 'Some activity' : 'Quiet so far'));
+  const kindText = Object.entries(kinds).map(([k, c]) => c + ' ' + KINDS[k].toLowerCase() + (c > 1 && k !== 'heads' ? 's' : '')).join(', ');
+  return { mood, headline, live: ds.length, kindText, best: best && (best.echoes || []).length ? best : null, pulses: ps.length };
+}
+function moodClass(m) { return ({ 'Crowded': 'm-hot', 'Long queue': 'm-hot', 'Loud': 'm-warm', 'Wi-Fi slow': 'm-warm', 'Quiet': 'm-cool', 'Food available': 'm-info', 'Active': 'm-info', 'Mixed': 'm-warm', 'No seats': 'm-hot', 'Seats free': 'm-cool' })[m] || ''; }
+function renderMap() {
+  const sel = zoneSel();
+  document.getElementById('mapGrid').innerHTML = visibleZones().map(z => { const v = buildVibe(z); return '<div class="map-zone ' + moodClass(v.mood) + (z === sel ? ' selected' : '') + '" data-z="' + escapeHtml(z) + '" onclick="document.getElementById(\'zoneSelect\').value=this.dataset.z; syncZone();"><div class="mz-name">' + escapeHtml(areaOf(z)) + '</div><div class="mz-mood">' + escapeHtml(v.mood) + '</div><div class="mz-n">' + v.live + ' live' + (v.pulses ? ' \u00b7 ' + v.pulses + ' pulse' + (v.pulses > 1 ? 's' : '') : '') + '</div></div>'; }).join('');
+}
+function renderVibe() {
+  const sel = zoneSel(), v = buildVibe(sel), present = canRead();
+  let h = '<div class="vibe"><div class="sub">' + escapeHtml(sel) + ' \u00b7 right now \u00b7 auto summary</div><div class="vh">' + escapeHtml(trHead(v.headline)) + '</div>';
+  h += '<div class="vl">' + (v.live ? v.live + ' live drop' + (v.live > 1 ? 's' : '') + ': ' + escapeHtml(v.kindText) : 'No live drops. Be the first to drop something here.') + '</div>';
+  if (v.best && present) h += '<div class="vl">Trending: \u201c' + escapeHtml(v.best.text) + '\u201d (' + v.best.echoes.length + ' echo' + (v.best.echoes.length > 1 ? 'es' : '') + ')</div>';
+  if (!present) h += '<div class="vl" style="opacity:.8;">Ghost view: you can feel the mood from outside, but you need to be here to read the drops.</div>';
+  document.getElementById('vibeBox').innerHTML = h + '</div>';
+}
+function renderPulseRow() {
+  const can = canPost();
+  const zn = zoneSel(), nowT = Date.now(), mine = pulses.filter(x => x.zone === zn && x.by === myId && nowT - x.t < PULSE_WINDOW).map(x => x.tag);
+  document.getElementById('pulseRow').innerHTML = PULSES.map(t => '<span class="chip' + (mine.includes(t) ? ' on' : '') + '" style="' + (can ? '' : 'opacity:.45;') + '" onclick="addPulse(\'' + t + '\')">' + tr(t) + '</span>').join('');
+  document.getElementById('actionBox').style.display = (can || locState.status !== 'unknown') ? '' : 'none';
+  document.querySelector('#actionBox .primary').style.opacity = can ? '' : '.45';
+}
+function renderAll() { renderMap(); renderVibe(); renderPulseRow(); renderFeed(); }
+function renderFeed() {
+  purgeExpired();
+  const zone = zoneSel(), list = document.getElementById('feedList'), now = Date.now(), present = canRead(), can = canPost();
+  const ds = liveDrops(zone).filter(p => !blockedByMe.includes(p.poster));
+  const noteHtml = lastActionNote ? '<div class="note" style="margin-bottom:10px;">' + lastActionNote + '</div>' : '';
+  lastActionNote = null;
+  if (!ds.length) { list.innerHTML = noteHtml + '<div class="empty"><strong class="empty-t">Nothing live here yet</strong><div>Be the first. Ask a question, offer something, or tap a pulse above.</div><div class="empty-act"><button class="primary" onclick="fabDrop()">Start a drop</button><button class="sm ghostbtn" onclick="loadDemo()">Load sample activity</button></div></div>'; return; }
+  const keep = captureReplyInputs();
+  list.innerHTML = noteHtml + ds.map(p => {
+    const mine = p.posterId === myId, left = expiresAt(p) - now, pct = Math.max(2, Math.round(left / maxLife(p) * 100)), ec = (p.echoes || []).length;
+    const text = present ? escapeHtml(p.text) : '\u2592'.repeat(Math.min(p.text.length, 36));
+    return '<div class="card' + (present ? '' : ' ghost') + '">' +
+      '<div class="row"><span class="tag ' + KIND_CLASS[p.kind] + '">' + KINDS[p.kind] + '</span><span class="ttl">' + fmtLeft(left) + (left < 120000 ? ' \u00b7 fading' : '') + '</span></div>' +
+      (present && p.photo ? '<img src="' + p.photo + '" alt="">' : '') +
+      '<div class="post-title">' + text + '</div>' +
+      '<div class="life"><div style="width:' + pct + '%"></div></div>' +
+      '<div class="sub">' + (present ? escapeHtml(p.poster) : 'Someone here') + (p.presence === 'qr' ? ' \u00b7 <span class="tag blue">QR-verified</span>' : '') + (p.demo ? ' \u00b7 <span class="tag warn">Sample</span>' : '') + '</div>' +
+      kindBody(p, present, can) +
+      replyBlock(p, present, can) +
+      (present ? '<div class="row" style="margin-top:8px;"><div style="display:flex; gap:6px; flex-wrap:wrap;"><button class="sm" onclick="echoDrop(' + p.id + ')" title="Echo: this is useful, or I am here too. It adds time to the drop." style="' + (can && !mine ? '' : 'opacity:.5;') + '">&#128266; Echo (' + ec + (ec >= ECHO_CAP ? ', max' : '') + ')</button>' +
+        (mine ? '<button class="sm ghostbtn" onclick="deleteDrop(' + p.id + ')">Delete</button>' : '<button class="sm ghostbtn" data-n="' + escapeHtml(p.poster) + '" onclick="blockPoster(this.dataset.n)">Block poster</button>') + '</div>' +
+        '<button class="sm" onclick="openReport(' + p.id + ')">Report</button></div>' : '') +
+      (reportingId === p.id ? '<div class="report-panel"><label class="field-label">Reason</label><select id="reasonSel_' + p.id + '"><option>Spam</option><option>Scam / fraud</option><option>Inappropriate content</option><option>Privacy concern</option></select><div class="row"><button class="sm ghostbtn" onclick="cancelReport()">Cancel</button><button class="sm primary" onclick="confirmReport(' + p.id + ')">Submit report</button></div></div>' : '') +
+      '</div>';
+  }).join('');
+  restoreReplyInputs(keep);
+}
+
+
+// ---------- replies ----------
+const REPLY_MAX = 20, REPLY_PER_USER = 3;
+function captureReplyInputs() {
+  const o = {};
+  document.querySelectorAll('input[id^="reply_"]').forEach(i => { o[i.id] = { v: i.value, f: document.activeElement === i }; });
+  return o;
+}
+function restoreReplyInputs(o) {
+  Object.keys(o).forEach(id => { const i = document.getElementById(id); if (i) { i.value = o[id].v; if (o[id].f) i.focus(); } });
+}
+function replyBlock(p, present, can) {
+  if (p.kind === 'heads' || p.kind === 'official') return '';
+  const rs = (p.replies || []).filter(r => !blockedByMe.includes(r.poster));
+  if (!present) return rs.length ? `<div class="sub" style="margin-top:6px;">${rs.length} repl${rs.length > 1 ? 'ies' : 'y'} (visible to people in the zone)</div>` : '';
+  let h = '';
+  if (rs.length) {
+    h += '<div style="margin-top:8px; padding-left:10px; border-left:2px solid var(--border);">' + rs.map(r =>
+      `<div style="font-size:13px; margin-bottom:6px;"><span class="sub">${escapeHtml(r.poster)}${r.posterId === p.posterId ? ' (asker)' : ''}${r.demo ? ' \u00b7 Sample' : ''}</span><br>${escapeHtml(r.text)}` +
+      (r.posterId === myId ? ` <button class="sm ghostbtn" style="padding:2px 8px;" onclick="deleteReply(${p.id}, ${r.id})">Delete</button>` : '') + '</div>').join('') + '</div>';
+  }
+  if (can) h += `<div class="row" style="margin-top:8px; flex-wrap:nowrap;"><input type="text" id="reply_${p.id}" maxlength="140" placeholder="Reply to this drop" style="margin:0; flex:1;" onkeydown="if (event.key === 'Enter') addReply(${p.id})"><button class="sm" onclick="addReply(${p.id})">Reply</button></div>`;
+  return h;
+}
+function addReply(id) {
+  const p = drops.find(x => x.id === id); if (!p) return;
+  if (p.kind === 'heads' || p.kind === 'official') return note('Heads-ups are one-way. Confirm one with Echo instead.');
+  if (!canPost()) return note('Replying needs verified presence in this zone.');
+  if ((strikes[myId] || 0) >= 4) return note('This identity has been removed from DropZone after repeated violations.');
+  const inp = document.getElementById('reply_' + id), text = inp ? inp.value.trim() : '';
+  if (!text) return;
+  p.replies = p.replies || [];
+  if (p.replies.length >= REPLY_MAX) return note('This thread is full (' + REPLY_MAX + ' replies).');
+  if (p.replies.filter(r => r.posterId === myId).length >= REPLY_PER_USER) return note('Reply limit reached: ' + REPLY_PER_USER + ' per drop for one identity.');
+  if (aiScreen(text)) return note('Your reply was blocked by the automatic screen. Rephrase it and try again.');
+  p.replies.push({ id: Date.now() + Math.floor(Math.random() * 1000), text, poster: myName, posterId: myId, t: Date.now() });
+  p.echoes = p.echoes || [];
+  if (p.posterId !== myId && !p.echoes.includes(myId)) p.echoes.push(myId);
+  saveDrops();
+  if (inp) inp.value = '';
+  lastActionNote = 'Reply posted. A reply also adds a little time to the drop.';
+  renderAll();
+}
+function deleteReply(pid, rid) {
+  const p = drops.find(x => x.id === pid); if (!p) return;
+  p.replies = (p.replies || []).filter(r => !(r.id === rid && r.posterId === myId));
+  saveDrops(); renderAll();
+}
+
+
+// ---------- drop kinds: each one behaves differently ----------
+const KIND_HINT = {
+  ask:   { label: 'Your question', ph: 'e.g. Is the Wi-Fi working here?', ttl: '1200000', extra: '' },
+  offer: { label: 'What are you offering?', ph: 'e.g. Spare charger', ttl: '1200000',
+           extra: '<label class="field-label">How many are available?</label><input type="number" id="xQty" min="1" max="20" value="1">' },
+  heads: { label: 'What should people know?', ph: 'e.g. Queue is out the door', ttl: '1200000',
+           extra: '<label class="field-label">Type of heads-up</label><select id="xHeads"><option>Crowded</option><option>Closed</option><option>Delay</option><option>Hazard</option><option>Other</option></select>' },
+  look:  { label: 'What or who are you looking for?', ph: 'e.g. Black umbrella, or a Python teammate', ttl: '1200000',
+           extra: '<label class="field-label">Looking for</label><select id="xLook"><option>Item</option><option>Person / teammate</option><option>Information</option></select>' },
+  join:  { label: 'What are you doing?', ph: 'e.g. Quick game of cricket', ttl: '3600000',
+           extra: '<label class="field-label">Spots needed (besides you)</label><input type="number" id="xSpots" min="1" max="10" value="3">' }
+};
+function buildExtra() {
+  const h = KIND_HINT[currentKind];
+  document.getElementById('textLabel').textContent = h.label;
+  document.getElementById('dText').placeholder = h.ph;
+  document.getElementById('dTTL').value = h.ttl;
+  document.getElementById('kindExtra').innerHTML = h.extra;
+}
+function numVal(id, lo, hi, d) { const e = document.getElementById(id), v = e ? parseInt(e.value, 10) : d; return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); }
+function buildMeta() {
+  if (currentKind === 'offer') return { qty: numVal('xQty', 1, 20, 1), claimed: [] };
+  if (currentKind === 'heads') return { type: document.getElementById('xHeads').value };
+  if (currentKind === 'look') return { what: document.getElementById('xLook').value };
+  if (currentKind === 'join') return { spots: numVal('xSpots', 1, 10, 3), joined: [] };
+  return {};
+}
+function demoMeta(k) {
+  if (k === 'offer') return { qty: 3, claimed: [] };
+  if (k === 'heads') return { type: 'Crowded' };
+  if (k === 'look') return { what: 'Person / teammate' };
+  if (k === 'join') return { spots: 4, joined: [{ id: 'demo-j1', name: 'Guest-3141' }] };
+  return {};
+}
+function kindBody(p, present, can) {
+  const m = p.meta || {}, mine = p.posterId === myId, chips = [], btns = [];
+  const chip = (t, c) => `<span class="tag ${c || ''}">${escapeHtml(t)}</span>`;
+  if (p.kind === 'heads' && m.type) chips.push(chip(m.type, 'warn'));
+  if (p.kind === 'look') { if (m.what) chips.push(chip('Looking for: ' + m.what, 'pink')); if (p.resolvedAt) chips.push(chip('Resolved', 'blue')); }
+  if (p.kind === 'offer') {
+    const claimed = m.claimed || [], qty = m.qty || 1, left = qty - claimed.length, got = claimed.includes(myId);
+    chips.push(chip(left > 0 ? left + ' of ' + qty + ' left' : 'All claimed', left > 0 ? '' : 'warn'));
+    if (got) chips.push(chip('You claimed one', 'blue'));
+    if (present && can && !mine && !got && left > 0) btns.push(`<button class="sm" onclick="claimOffer(${p.id})">Claim one</button>`);
+  }
+  if (p.kind === 'join') {
+    const joined = m.joined || [], spots = m.spots || 1, full = joined.length >= spots, inIt = joined.some(j => j.id === myId);
+    chips.push(chip(joined.length + ' of ' + spots + ' joined', full ? 'warn' : 'blue'));
+    if (present && can && !mine && !inIt && !full) btns.push(`<button class="sm" onclick="joinDrop(${p.id})">I am in</button>`);
+    if (present && inIt) btns.push(`<button class="sm ghostbtn" onclick="leaveDrop(${p.id})">Leave</button>`);
+    if (present && joined.length) return rowOf(chips, btns) + `<div class="sub" style="margin-top:4px;">In: ${joined.map(j => escapeHtml(j.name)).join(', ')}</div>`;
+  }
+  if (p.kind === 'look' && mine && !p.resolvedAt) btns.push(`<button class="sm" onclick="resolveLook(${p.id})">Mark as found</button>`);
+  return rowOf(chips, btns);
+}
+function rowOf(chips, btns) { return (chips.length || btns.length) ? `<div class="row" style="margin-top:8px; justify-content:flex-start;">${chips.join('')}${btns.join('')}</div>` : ''; }
+function claimOffer(id) {
+  const p = drops.find(x => x.id === id); if (!p) return;
+  if (!canPost()) return note('Claiming needs verified presence in this zone.');
+  const m = p.meta = p.meta || { qty: 1, claimed: [] }; m.claimed = m.claimed || [];
+  if (p.posterId === myId) return note('You cannot claim your own offer.');
+  if (m.claimed.includes(myId)) return note('You already claimed one.');
+  if (m.claimed.length >= (m.qty || 1)) return note('All of these have been claimed.');
+  m.claimed.push(myId); saveDrops();
+  note('Claimed. Use Reply to agree where to meet in the zone.');
+}
+function joinDrop(id) {
+  const p = drops.find(x => x.id === id); if (!p) return;
+  if (!canPost()) return note('Joining needs verified presence in this zone.');
+  const m = p.meta = p.meta || { spots: 1, joined: [] }; m.joined = m.joined || [];
+  if (p.posterId === myId) return note('You started this one, so you are already in.');
+  if (m.joined.some(j => j.id === myId)) return note('You already joined.');
+  if (m.joined.length >= (m.spots || 1)) return note('This group is full.');
+  m.joined.push({ id: myId, name: myName }); saveDrops();
+  note(m.joined.length >= m.spots ? 'You are in. The group is now full.' : 'You are in. Use Reply to coordinate.');
+}
+function leaveDrop(id) {
+  const p = drops.find(x => x.id === id); if (!p || !p.meta) return;
+  p.meta.joined = (p.meta.joined || []).filter(j => j.id !== myId); saveDrops();
+  note('You left the group.');
+}
+function resolveLook(id) {
+  const p = drops.find(x => x.id === id); if (!p || p.posterId !== myId) return;
+  p.resolvedAt = Date.now(); saveDrops();
+  note('Marked as found. This drop disappears in 2 minutes.');
+}
+
+
+// ---------- language ----------
+const I18N = {
+  hi: { 'Zone':'\u091c\u093c\u094b\u0928','Moderator':'\u092e\u0949\u0921\u0930\u0947\u091f\u0930','Privacy':'\u0917\u094b\u092a\u0928\u0940\u092f\u0924\u093e','+ New drop':'+ \u0928\u092f\u093e \u0921\u094d\u0930\u0949\u092a','Ask':'\u092a\u0942\u091b\u0947\u0902','Offer':'\u0911\u092b\u093c\u0930','Heads-up':'\u0938\u0942\u091a\u0928\u093e','Looking':'\u0916\u094b\u091c \u0930\u0939\u0947 \u0939\u0948\u0902','Join':'\u091c\u0941\u0921\u093c\u0947\u0902','Official':'\u0906\u0927\u093f\u0915\u093e\u0930\u093f\u0915','Crowded':'\u092d\u0940\u0921\u093c','Quiet':'\u0936\u093e\u0902\u0924','Loud':'\u0936\u094b\u0930','Long queue':'\u0932\u0902\u092c\u0940 \u0915\u0924\u093e\u0930','Wi-Fi slow':'\u0935\u093e\u0908-\u092b\u093c\u093e\u0908 \u0927\u0940\u092e\u093e','Food available':'\u0916\u093e\u0928\u093e \u0909\u092a\u0932\u092c\u094d\u0927' },
+  te: { 'Zone':'\u0c1c\u0c4b\u0c28\u0c4d','Moderator':'\u0c2e\u0c4b\u0c21\u0c30\u0c47\u0c1f\u0c30\u0c4d','Privacy':'\u0c17\u0c4b\u0c2a\u0c4d\u0c2f\u0c24','+ New drop':'+ \u0c15\u0c4a\u0c24\u0c4d\u0c24 \u0c21\u0c4d\u0c30\u0c3e\u0c2a\u0c4d','Ask':'\u0c05\u0c21\u0c17\u0c02\u0c21\u0c3f','Offer':'\u0c06\u0c2b\u0c30\u0c4d','Heads-up':'\u0c38\u0c2e\u0c3e\u0c1a\u0c3e\u0c30\u0c02','Looking':'\u0c35\u0c46\u0c24\u0c41\u0c15\u0c41\u0c24\u0c4d\u0c28\u0c4d\u0c28\u0c3e\u0c30\u0c41','Join':'\u0c1a\u0c47\u0c30\u0c02\u0c21\u0c3f','Official':'\u0c05\u0c27\u0c3f\u0c15\u0c3e\u0c30\u0c3f\u0c15','Crowded':'\u0c30\u0c26\u0c4d\u0c26\u0c40','Quiet':'\u0c28\u0c3f\u0c36\u0c4d\u0c36\u0c2c\u0c4d\u0c26\u0c02','Loud':'\u0c36\u0c2c\u0c4d\u0c26\u0c02','Long queue':'\u0c2a\u0c4a\u0c21\u0c35\u0c48\u0c28 \u0c15\u0c4d\u0c2f\u0c42','Wi-Fi slow':'\u0c35\u0c48-\u0c2b\u0c48 \u0c28\u0c46\u0c2e\u0c4d\u0c2e\u0c26\u0c3f','Food available':'\u0c06\u0c39\u0c3e\u0c30\u0c02 \u0c05\u0c02\u0c26\u0c41\u0c2c\u0c3e\u0c1f\u0c41\u0c32\u0c4b' }
+};
+Object.assign(I18N.hi, { 'No seats': 'सीटें नहीं', 'Seats free': 'सीटें खाली' });
+Object.assign(I18N.te, { 'No seats': 'సీట్లు లేవు', 'Seats free': 'సీట్లు ఖాళీ' });
+let lang = 'en'; try { lang = localStorage.getItem('dz_lang') || 'en'; } catch (e) {}
+KINDS.official = 'Official'; KIND_CLASS.official = 'blue';
+const KIND_EN = Object.assign({}, KINDS);
+function tr(t) { return (I18N[lang] && I18N[lang][t]) || t; }
+function trHead(h) { return PULSES.reduce((a, t) => a.split(t).join(tr(t)), h); }
+function applyLang() {
+  Object.keys(KIND_EN).forEach(k => { KINDS[k] = tr(KIND_EN[k]); });
+  const tabs = { feed: 'Zone', mod: 'Moderator', privacy: 'Privacy', flow: 'How it works' };
+  document.querySelectorAll('.tab').forEach(t => { t.textContent = tr(tabs[t.dataset.tab]); });
+  const nb = document.querySelector('#actionBox .primary'); if (nb) nb.textContent = tr('+ New drop');
+  const ls = document.getElementById('langSel'); if (ls) ls.value = lang;
+}
+function setLang(v) { lang = v; try { localStorage.setItem('dz_lang', v); } catch (e) {} applyLang(); buildKindRow(); renderAll(); xlNode(document.body); }
+applyLang();
+
+// ---------- better-nearby tip ----------
+const TIP = {
+  en: (z, b) => z + ' is busy right now. ' + b + ' looks quieter.',
+  hi: (z, b) => z + ' \u092e\u0947\u0902 \u0905\u092d\u0940 \u092d\u0940\u0921\u093c \u0939\u0948\u0964 ' + b + ' \u092e\u0947\u0902 \u0915\u092e \u092d\u0940\u0921\u093c \u0932\u0917\u0924\u0940 \u0939\u0948\u0964',
+  te: (z, b) => z + ' \u0c32\u0c4b \u0c07\u0c2a\u0c4d\u0c2a\u0c41\u0c21\u0c41 \u0c30\u0c26\u0c4d\u0c26\u0c40\u0c17\u0c3e \u0c09\u0c02\u0c26\u0c3f. ' + b + ' \u0c32\u0c4b \u0c24\u0c15\u0c4d\u0c15\u0c41\u0c35 \u0c30\u0c26\u0c4d\u0c26\u0c40\u0c17\u0c3e \u0c09\u0c02\u0c26\u0c3f.'
+};
+const GOTO = { en: 'Go to', hi: '\u0935\u0939\u093e\u0901 \u091c\u093e\u090f\u0901', te: '\u0c05\u0c15\u0c4d\u0c15\u0c21\u0c3f\u0c15\u0c3f \u0c35\u0c46\u0c33\u0c4d\u0c32\u0c02\u0c21\u0c3f' };
+function busyScore(z) {
+  const now = Date.now(); let n = 0;
+  pulses.forEach(x => { if (x.zone === z && now - x.t < PULSE_WINDOW) { if (x.tag === 'Crowded' || x.tag === 'Long queue' || x.tag === 'No seats') n++; else if (x.tag === 'Quiet' || x.tag === 'Seats free') n--; } });
+  return n;
+}
+function nearbyTip() {
+  const zone = zoneSel(), cur = busyScore(zone);
+  if (cur < 1) return '';
+  const best = ZONES.filter(z => z !== zone).sort((a, b) => busyScore(a) - busyScore(b))[0];
+  if (!best || busyScore(best) >= cur) return '';
+  return '<div class="note" style="margin-top:8px;">' + escapeHtml(TIP[lang](zone, best)) + ' <button class="sm" style="margin-left:6px;" data-z="' + escapeHtml(best) + '" onclick="goZone(this.dataset.z)">' + GOTO[lang] + ' ' + escapeHtml(best) + '</button></div>';
+}
+const _renderVibe = renderVibe;
+renderVibe = function () { _renderVibe(); const el = document.getElementById('vibeBox'); if (el) el.insertAdjacentHTML('beforeend', nearbyTip()); };
+
+// ---------- official announcements ----------
+function fillOff() {
+  const sel = document.getElementById('offZone'); if (!sel) return;
+  const v = sel.value; sel.innerHTML = ZONES.map(z => '<option>' + escapeHtml(z) + '</option>').join(''); if (ZONES.includes(v)) sel.value = v;
+  const now = Date.now(), list = drops.filter(p => p.kind === 'official' && expiresAt(p) > now);
+  document.getElementById('offList').innerHTML = list.map(p => '<div class="note" style="margin-top:8px;"><strong>' + escapeHtml(p.zone) + '</strong> \u00b7 ' + escapeHtml(p.text) + ' <button class="sm ghostbtn" onclick="removeOfficial(' + p.id + ')">Remove</button></div>').join('');
+}
+function postOfficial() {
+  const err = document.getElementById('offErr'); err.style.display = 'none';
+  if (!isMod) return;
+  const text = document.getElementById('offText').value.trim(), zone = document.getElementById('offZone').value, now = Date.now();
+  if (!text) { err.textContent = 'Write the announcement first.'; err.style.display = ''; return; }
+  if (drops.filter(p => p.kind === 'official' && p.zone === zone && expiresAt(p) > now).length >= 2) { err.textContent = 'Frequency cap: 2 live announcements per zone. Remove one first.'; err.style.display = ''; return; }
+  drops.unshift({ id: now + Math.floor(Math.random() * 1000), zone, kind: 'official', meta: {}, text, photo: null, createdAt: now, ttlMs: parseInt(document.getElementById('offTTL').value, 10), status: 'visible', poster: 'Organiser', posterId: 'organiser', echoes: [], replies: [], presence: 'staff' });
+  saveDrops(); document.getElementById('offText').value = ''; renderAll(); fillOff();
+}
+function removeOfficial(id) { drops = drops.filter(p => p.id !== id); saveDrops(); renderAll(); fillOff(); }
+const _renderMod = renderMod;
+renderMod = function () { _renderMod(); fillOff(); };
+
+// ---------- zone story (kept 24 h, no poster names) ----------
+const DAY = 86400000;
+let storyOpen = false;
+function getStory() { const st = loadJSON('dz_story_' + packKey, { top: [], moods: [] }), now = Date.now(); st.top = (st.top || []).filter(x => now - x.t < DAY); st.moods = (st.moods || []).filter(x => now - x.t < DAY); return st; }
+function archiveExpired() {
+  const now = Date.now(), st = getStory(); let ch = false;
+  drops.forEach(p => { if (p.kind !== 'official' && p.status === 'visible' && expiresAt(p) <= now && (p.echoes || []).length >= 2 && !st.top.some(x => x.id === p.id)) { st.top.push({ id: p.id, zone: p.zone, kind: p.kind, text: p.text, echoes: p.echoes.length, t: now }); ch = true; } });
+  if (ch) saveJSON('dz_story_' + packKey, st);
+}
+const _purge = purgeExpired;
+purgeExpired = function () { archiveExpired(); return _purge(); };
+const _addPulse = addPulse;
+addPulse = function () {
+  const last = pulses.length ? pulses[pulses.length - 1] : null, r = _addPulse.apply(null, arguments);
+  const cur = pulses.length ? pulses[pulses.length - 1] : null;
+  if (cur && cur !== last) { const st = getStory(); st.moods.push({ zone: cur.zone, tag: cur.tag, t: cur.t }); saveJSON('dz_story_' + packKey, st); }
+  return r;
+};
+function toggleStory() { storyOpen = !storyOpen; renderStory(); }
+function renderStory() {
+  const box = document.getElementById('storyBox'); if (!box) return;
+  let h = '<div style="margin:8px 0;"><button class="sm" onclick="toggleStory()">' + (storyOpen ? 'Hide' : 'Show') + ' zone story</button></div>';
+  if (storyOpen) {
+    const zone = zoneSel(), st = getStory(), now = Date.now();
+    if (!canRead()) h += '<div class="note">Be in the zone to read its story.</div>';
+    else {
+      const live = drops.filter(p => p.zone === zone && p.kind !== 'official' && p.status === 'visible' && (p.echoes || []).length >= 2 && expiresAt(p) > now).map(p => ({ text: p.text, echoes: p.echoes.length }));
+      const old = st.top.filter(x => x.zone === zone).map(x => ({ text: x.text, echoes: x.echoes }));
+      const tops = live.concat(old).sort((a, b) => b.echoes - a.echoes).slice(0, 3);
+      const ms = st.moods.filter(x => x.zone === zone).concat(pulses.filter(x => x.zone === zone && x.demo));
+      const cnt = {}, hrs = {}; ms.forEach(x => { cnt[x.tag] = (cnt[x.tag] || 0) + 1; if (x.tag === 'Crowded' || x.tag === 'Long queue' || x.tag === 'No seats') { const hr = new Date(x.t).getHours(); hrs[hr] = (hrs[hr] || 0) + 1; } });
+      const topTag = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0], busy = Object.entries(hrs).sort((a, b) => b[1] - a[1])[0];
+      h += '<div class="card"><h2>Story of ' + escapeHtml(zone) + ' today</h2>';
+      h += tops.length ? tops.map(t => '<div style="margin-bottom:6px;">\u201c' + escapeHtml(t.text) + '\u201d <span class="sub">\u00b7 ' + t.echoes + ' echoes</span></div>').join('') : '<div class="sub">No drop has earned 2 echoes yet.</div>';
+      if (topTag) h += '<div class="sub" style="margin-top:6px;">Most reported: ' + escapeHtml(tr(topTag[0])) + ' (' + topTag[1] + ')</div>';
+      if (busy) { const hr = parseInt(busy[0], 10); h += '<div class="sub">Busiest around: ' + ((hr % 12) || 12) + (hr < 12 ? ' AM' : ' PM') + '</div>'; }
+      h += '<div class="note" style="margin-top:8px;">Only drops with 2 or more echoes and anonymous mood counts are kept, for 24 hours, then deleted. Poster names are not kept.</div></div>';
+    }
+  }
+  box.innerHTML = h;
+}
+const _renderAll = renderAll;
+renderAll = function () { _renderAll(); renderStory(); renderPlaceChips(); };
+
+
+// ---------- full-page translation (dictionary + patterns, applied to the whole DOM) ----------
+const DX = {
+ 'Instagram follows people. DropZone follows places.':['इंस्टाग्राम लोगों को फ़ॉलो करता है। DropZone जगहों को फ़ॉलो करता है।','ఇన్‌స్టాగ్రామ్ వ్యక్తులను ఫాలో అవుతుంది. DropZone ప్రదేశాలను ఫాలో అవుతుంది.'],
+ 'Your email, to continue':['जारी रखने के लिए अपना ईमेल दें','కొనసాగించడానికి మీ ఇమెయిల్ ఇవ్వండి'],
+ 'Enter a valid-looking email':['सही दिखने वाला ईमेल दर्ज करें','సరైన ఇమెయిల్ నమోదు చేయండి'],
+ 'Your email is used only so a report can be traced back to a real identity, which makes abuse accountable. It is never shown on drops. Each visit uses a new temporary name.':['आपका ईमेल केवल इसलिए लिया जाता है कि रिपोर्ट को असली पहचान तक पहुँचाया जा सके, ताकि दुरुपयोग पर जवाबदेही रहे। यह ड्रॉप पर कभी नहीं दिखता। हर बार एक नया अस्थायी नाम मिलता है।','మీ ఇమెయిల్‌ను రిపోర్ట్‌ను నిజమైన గుర్తింపుకు చేర్చడానికి మాత్రమే ఉపయోగిస్తాం, దీనివల్ల దుర్వినియోగానికి బాధ్యత ఉంటుంది. ఇది డ్రాప్‌లపై ఎప్పుడూ కనిపించదు. ప్రతిసారి కొత్త తాత్కాలిక పేరు ఇస్తాం.'],
+ 'Continue':['जारी रखें','కొనసాగించండి'],
+ 'Social media where the account is the place':['सोशल मीडिया जहाँ अकाउंट जगह ही है','ఖాతా అంటే ప్రదేశమే అయిన సోషల్ మీడియా'],
+ 'Live map: tap a zone':['लाइव नक्शा: किसी ज़ोन पर टैप करें','లైవ్ మ్యాప్: ఒక జోన్‌ను తాకండి'],
+ 'Simulate: inside selected zone':['सिमुलेशन: चुने ज़ोन के अंदर','అనుకరణ: ఎంచుకున్న జోన్ లోపల'],
+ 'Simulate: inside a different zone':['सिमुलेशन: दूसरे ज़ोन के अंदर','అనుకరణ: వేరే జోన్ లోపల'],
+ 'Simulate: low accuracy (indoors)':['सिमुलेशन: कम सटीकता (इमारत के अंदर)','అనుకరణ: తక్కువ ఖచ్చితత్వం (ఇంటి లోపల)'],
+ 'Simulate: outside the venue':['सिमुलेशन: स्थल के बाहर','అనుకరణ: వేదిక వెలుపల'],
+ 'Simulate: spoofed / teleport':['सिमुलेशन: नकली लोकेशन / अचानक कूद','అనుకరణ: నకిలీ లొకేషన్ / టెలిపోర్ట్'],
+ 'Simulate: permission denied':['सिमुलेशन: अनुमति अस्वीकृत','అనుకరణ: అనుమతి నిరాకరణ'],
+ 'Use my real GPS':['मेरा असली GPS इस्तेमाल करें','నా నిజమైన GPS వాడండి'],
+ '▦ Verify with zone QR':['▦ ज़ोन QR से सत्यापित करें','▦ జోన్ QRతో ధృవీకరించండి'],
+ 'Verify you are here with the zone QR':['ज़ोन QR से साबित करें कि आप यहाँ हैं','జోన్ QRతో మీరు ఇక్కడ ఉన్నారని ధృవీకరించండి'],
+ 'Each zone shows a QR that changes every minute, so a photo of it cannot be shared around. Scanning proves you are physically there, even indoors where GPS is weak or when location is denied.':['हर ज़ोन एक QR दिखाता है जो हर मिनट बदलता है, इसलिए उसकी फ़ोटो आगे साझा नहीं की जा सकती। स्कैन करने से साबित होता है कि आप वहाँ मौजूद हैं, चाहे GPS कमज़ोर हो या लोकेशन मना हो।','ప్రతి జోన్ ప్రతి నిమిషం మారే QRను చూపిస్తుంది, కాబట్టి దాని ఫోటోను ఇతరులతో పంచలేరు. స్కాన్ చేస్తే మీరు అక్కడ ఉన్నారని రుజువవుతుంది, GPS బలహీనంగా ఉన్నా లేదా లొకేషన్ నిరాకరించినా.'],
+ 'Scan with camera':['कैमरे से स्कैन करें','కెమెరాతో స్కాన్ చేయండి'],
+ "Or scan with your phone's normal camera app. The link opens DropZone and verifies you automatically.":['या अपने फ़ोन के सामान्य कैमरा ऐप से स्कैन करें। लिंक DropZone खोलेगा और अपने आप सत्यापित कर देगा।','లేదా మీ ఫోన్ సాధారణ కెమెరా యాప్‌తో స్కాన్ చేయండి. లింక్ DropZoneను తెరిచి ఆటోమేటిక్‌గా ధృవీకరిస్తుంది.'],
+ 'Or paste the scanned link':['या स्कैन किया हुआ लिंक पेस्ट करें','లేదా స్కాన్ చేసిన లింక్‌ను పేస్ట్ చేయండి'],
+ 'Paste the link from the QR':['QR से मिला लिंक पेस्ट करें','QR నుండి లింక్‌ను పేస్ట్ చేయండి'],
+ 'Verify':['सत्यापित करें','ధృవీకరించండి'],
+ "Demo: simulate scanning this zone's QR":['डेमो: इस ज़ोन का QR स्कैन करने का अनुकरण करें','డెమో: ఈ జోన్ QR స్కాన్‌ను అనుకరించండి'],
+ 'One-tap pulse (no typing needed)':['एक-टैप पल्स (टाइप करने की ज़रूरत नहीं)','ఒక్క-ట్యాప్ పల్స్ (టైప్ చేయక్కర్లేదు)'],
+ 'New drop':['नया ड्रॉप','కొత్త డ్రాప్'],
+ 'What kind of drop?':['किस तरह का ड्रॉप?','ఏ రకమైన డ్రాప్?'],
+ 'Say it in one line':['एक पंक्ति में कहें','ఒక్క లైన్‌లో చెప్పండి'],
+ 'Write something first':['पहले कुछ लिखें','ముందు ఏదైనా రాయండి'],
+ 'Photo (optional, no faces or ID cards please)':['फ़ोटो (वैकल्पिक, कृपया चेहरे या ID कार्ड नहीं)','ఫోటో (ఐచ్ఛికం, ముఖాలు లేదా ID కార్డులు వద్దు)'],
+ 'Lasts (each echo from someone here adds time)':['कितने समय तक (यहाँ के हर इको से समय बढ़ता है)','ఎంతసేపు (ఇక్కడి ప్రతి ఎకో సమయం పెంచుతుంది)'],
+ '1 minute (demo)':['1 मिनट (डेमो)','1 నిమిషం (డెమో)'],'20 minutes':['20 मिनट','20 నిమిషాలు'],'1 hour':['1 घंटा','1 గంట'],
+ 'Cancel':['रद्द करें','రద్దు చేయండి'],'Drop it here':['यहाँ ड्रॉप करें','ఇక్కడ డ్రాప్ చేయండి'],
+ 'e.g. Anyone have a charger near here?':['जैसे: यहाँ किसी के पास चार्जर है?','ఉదా: ఇక్కడ ఎవరి దగ్గరైనా ఛార్జర్ ఉందా?'],
+ 'Your question':['आपका सवाल','మీ ప్రశ్న'],'e.g. Is the Wi-Fi working here?':['जैसे: क्या यहाँ वाई-फ़ाई चल रहा है?','ఉదా: ఇక్కడ వై-ఫై పనిచేస్తోందా?'],
+ 'What are you offering?':['आप क्या ऑफ़र कर रहे हैं?','మీరు ఏమి అందిస్తున్నారు?'],'e.g. Spare charger':['जैसे: एक्स्ट्रा चार्जर','ఉదా: అదనపు ఛార్జర్'],
+ 'How many are available?':['कितने उपलब्ध हैं?','ఎన్ని అందుబాటులో ఉన్నాయి?'],
+ 'What should people know?':['लोगों को क्या पता होना चाहिए?','ప్రజలు ఏమి తెలుసుకోవాలి?'],'e.g. Queue is out the door':['जैसे: कतार दरवाज़े तक पहुँच गई है','ఉదా: క్యూ తలుపు వరకు ఉంది'],
+ 'Type of heads-up':['सूचना का प्रकार','సమాచార రకం'],'Closed':['बंद','మూసివేత'],'Delay':['देरी','ఆలస్యం'],'Hazard':['ख़तरा','ప్రమాదం'],'Other':['अन्य','ఇతర'],
+ 'What or who are you looking for?':['आप क्या या किसे खोज रहे हैं?','మీరు ఏమి లేదా ఎవరి కోసం వెతుకుతున్నారు?'],'e.g. Black umbrella, or a Python teammate':['जैसे: काली छतरी, या Python टीममेट','ఉదా: నల్ల గొడుగు, లేదా Python టీమ్‌మేట్'],
+ 'Looking for':['खोज रहे हैं','వెతుకుతున్నది'],'Item':['सामान','వస్తువు'],'Person / teammate':['व्यक्ति / टीममेट','వ్యక్తి / టీమ్‌మేట్'],'Information':['जानकारी','సమాచారం'],
+ 'What are you doing?':['आप क्या कर रहे हैं?','మీరు ఏమి చేస్తున్నారు?'],'e.g. Quick game of cricket':['जैसे: जल्दी से क्रिकेट का खेल','ఉదా: త్వరగా క్రికెట్ ఆట'],
+ 'Spots needed (besides you)':['कितने लोग चाहिए (आपके अलावा)','ఎంతమంది కావాలి (మీరు కాకుండా)'],
+ 'Delete':['हटाएँ','తొలగించండి'],'Block poster':['पोस्ट करने वाले को ब्लॉक करें','పోస్ట్ చేసిన వారిని బ్లాక్ చేయండి'],'Report':['रिपोर्ट करें','రిపోర్ట్ చేయండి'],'Reason':['कारण','కారణం'],
+ 'Spam':['स्पैम','స్పామ్'],'Scam / fraud':['धोखाधड़ी','మోసం'],'Inappropriate content':['अनुचित सामग्री','అనుచిత కంటెంట్'],'Privacy concern':['गोपनीयता की चिंता','గోప్యతా ఆందోళన'],'Submit report':['रिपोर्ट भेजें','రిపోర్ట్ సమర్పించండి'],
+ 'Someone here':['यहाँ कोई','ఇక్కడ ఎవరో'],'QR-verified':['QR-सत्यापित','QR-ధృవీకరించబడింది'],'QR-verified here':['यहाँ QR-सत्यापित','ఇక్కడ QR-ధృవీకరించబడింది'],'Sample':['नमूना','నమూనా'],
+ 'Reply':['जवाब दें','జవాబు'],'Reply to this drop':['इस ड्रॉप का जवाब दें','ఈ డ్రాప్‌కు జవాబు ఇవ్వండి'],'(asker)':['(पूछने वाला)','(అడిగినవారు)'],
+ 'Claim one':['एक लें','ఒకటి తీసుకోండి'],'All claimed':['सब ले लिए गए','అన్నీ తీసుకున్నారు'],'You claimed one':['आपने एक ले लिया','మీరు ఒకటి తీసుకున్నారు'],'I am in':['मैं शामिल हूँ','నేను చేరుతున్నాను'],'Leave':['छोड़ें','వదిలివేయండి'],'Mark as found':['मिल गया, चिह्नित करें','దొరికింది అని గుర్తించండి'],'Resolved':['हल हुआ','పరిష్కారమైంది'],
+ 'Show zone story':['ज़ोन की कहानी दिखाएँ','జోన్ కథను చూపించు'],'Hide zone story':['ज़ोन की कहानी छिपाएँ','జోన్ కథను దాచు'],
+ 'Be in the zone to read its story.':['कहानी पढ़ने के लिए ज़ोन में रहें।','కథ చదవడానికి జోన్‌లో ఉండండి.'],'No drop has earned 2 echoes yet.':['अभी किसी ड्रॉप को 2 इको नहीं मिले।','ఇంకా ఏ డ్రాప్‌కు 2 ఎకోలు రాలేదు.'],
+ 'Only drops with 2 or more echoes and anonymous mood counts are kept, for 24 hours, then deleted. Poster names are not kept.':['केवल 2 या अधिक इको वाले ड्रॉप और बेनाम मूड गिनती 24 घंटे रखी जाती हैं, फिर मिटा दी जाती हैं। पोस्ट करने वालों के नाम नहीं रखे जाते।','2 లేదా అంతకంటే ఎక్కువ ఎకోలు వచ్చిన డ్రాప్‌లు, పేరులేని మూడ్ లెక్కలు మాత్రమే 24 గంటలు ఉంచి, తర్వాత తొలగిస్తాం. పోస్ట్ చేసినవారి పేర్లు ఉంచం.'],
+ 'No live drops. Be the first to drop something here.':['कोई लाइव ड्रॉप नहीं। यहाँ सबसे पहले कुछ ड्रॉप करें।','లైవ్ డ్రాప్‌లు లేవు. ఇక్కడ మొదట డ్రాప్ చేయండి.'],
+ 'Ghost view: you can feel the mood from outside, but you need to be here to read the drops.':['घोस्ट व्यू: आप बाहर से माहौल देख सकते हैं, पर ड्रॉप पढ़ने के लिए यहाँ होना ज़रूरी है।','ఘోస్ట్ వ్యూ: బయటినుండి వాతావరణం తెలుస్తుంది, కానీ డ్రాప్‌లు చదవాలంటే ఇక్కడ ఉండాలి.'],
+ 'Quiet so far':['अब तक शांत','ఇప్పటివరకు నిశ్శబ్దం'],'Some activity':['कुछ हलचल','కొంత కార్యకలాపం'],'No reports':['कोई रिपोर्ट नहीं','రిపోర్ట్‌లు లేవు'],'Active':['सक्रिय','చురుకు'],'Mixed':['मिला-जुला','మిశ్రమం'],
+ 'Load sample activity':['नमूना गतिविधि लोड करें','నమూనా కార్యకలాపం లోడ్ చేయండి'],'expired':['समाप्त','గడువు ముగిసింది'],'· fading':['· मिटने वाला','· మసకబారుతోంది'],
+ 'inside':['अंदर','లోపల'],'inaccurate':['अनिश्चित','అస్పష్టం'],'outside':['बाहर','వెలుపల'],'spoofed':['नकली','నకిలీ'],'denied':['अस्वीकृत','నిరాకరించబడింది'],
+ 'Zone events':['ज़ोन की गतिविधियाँ','జోన్ సంఘటనలు'],'(newest first)':['(सबसे नई पहले)','(కొత్తవి ముందు)'],
+ 'Location permission denied. Reading and posting are locked, and nothing is collected.':['लोकेशन की अनुमति अस्वीकृत। पढ़ना और पोस्ट करना बंद है, और कुछ भी इकट्ठा नहीं होता।','లొకేషన్ అనుమతి నిరాకరించబడింది. చదవడం, పోస్ట్ చేయడం లాక్ అయ్యాయి, ఏమీ సేకరించబడదు.'],
+ "You are outside every zone. You can see each zone's mood but not its drops.":['आप हर ज़ोन से बाहर हैं। आप हर ज़ोन का माहौल देख सकते हैं, पर ड्रॉप नहीं।','మీరు ఏ జోన్‌లోనూ లేరు. ప్రతి జోన్ వాతావరణం చూడవచ్చు, కానీ డ్రాప్‌లు కాదు.'],
+ 'Storage was full, so photos were removed to keep drops saved.':['स्टोरेज भर गया था, इसलिए ड्रॉप सहेजने के लिए फ़ोटो हटा दी गईं।','స్టోరేజ్ నిండింది, అందుకే డ్రాప్‌లను భద్రపరచడానికి ఫోటోలను తొలగించాం.'],
+ 'This identity has been removed from DropZone after repeated violations.':['बार-बार उल्लंघन के कारण इस पहचान को DropZone से हटा दिया गया है।','పదేపదే ఉల్లంఘనల వల్ల ఈ గుర్తింపును DropZone నుండి తొలగించాం.'],
+ 'Your drop was held for moderator review before it appears.':['आपका ड्रॉप दिखने से पहले मॉडरेटर की समीक्षा के लिए रोका गया है।','మీ డ్రాప్ కనిపించే ముందు మోడరేటర్ సమీక్ష కోసం ఆపబడింది.'],
+ 'Echoing needs verified presence in this zone.':['इको करने के लिए इस ज़ोन में सत्यापित उपस्थिति ज़रूरी है।','ఎకో చేయడానికి ఈ జోన్‌లో ధృవీకరించిన ఉనికి అవసరం.'],
+ 'You cannot echo your own drop.':['आप अपने ही ड्रॉप को इको नहीं कर सकते।','మీరు మీ స్వంత డ్రాప్‌ను ఎకో చేయలేరు.'],
+ 'You already echoed this drop.':['आप इस ड्रॉप को पहले ही इको कर चुके हैं।','మీరు ఈ డ్రాప్‌ను ఇప్పటికే ఎకో చేశారు.'],
+ 'Echoed. This drop has reached its maximum lifespan.':['इको हो गया। इस ड्रॉप की अधिकतम उम्र पूरी हो गई।','ఎకో అయింది. ఈ డ్రాప్ గరిష్ట జీవితకాలానికి చేరింది.'],
+ 'Echoed. This drop now lasts longer.':['इको हो गया। अब यह ड्रॉप ज़्यादा देर चलेगा।','ఎకో అయింది. ఈ డ్రాప్ ఇప్పుడు ఎక్కువసేపు ఉంటుంది.'],
+ 'You cannot report your own drop. Use Delete instead.':['आप अपने ही ड्रॉप की रिपोर्ट नहीं कर सकते। इसके बजाय हटाएँ।','మీరు మీ స్వంత డ్రాప్‌ను రిపోర్ట్ చేయలేరు. బదులుగా తొలగించండి.'],
+ 'You already reported this drop.':['आप इस ड्रॉप की रिपोर्ट पहले ही कर चुके हैं।','మీరు ఈ డ్రాప్‌ను ఇప్పటికే రిపోర్ట్ చేశారు.'],
+ 'Report submitted. The drop is hidden and sent to the moderator queue.':['रिपोर्ट भेज दी गई। ड्रॉप छिपा दिया गया है और मॉडरेटर कतार में भेजा गया है।','రిపోర్ట్ సమర్పించబడింది. డ్రాప్ దాచబడి మోడరేటర్ క్యూకు పంపబడింది.'],
+ 'Pulses need verified presence in this zone.':['पल्स के लिए इस ज़ोन में सत्यापित उपस्थिति ज़रूरी है।','పల్స్‌కు ఈ జోన్‌లో ధృవీకరించిన ఉనికి అవసరం.'],
+ 'Replying needs verified presence in this zone.':['जवाब देने के लिए इस ज़ोन में सत्यापित उपस्थिति ज़रूरी है।','జవాబు ఇవ్వడానికి ఈ జోన్‌లో ధృవీకరించిన ఉనికి అవసరం.'],
+ 'Your reply was blocked by the automatic screen. Rephrase it and try again.':['आपका जवाब स्वचालित जाँच ने रोक दिया। दूसरे शब्दों में लिखकर फिर कोशिश करें।','మీ జవాబును ఆటోమేటిక్ స్క్రీన్ ఆపింది. వేరే పదాలతో మళ్లీ ప్రయత్నించండి.'],
+ 'Reply posted. A reply also adds a little time to the drop.':['जवाब पोस्ट हो गया। जवाब से ड्रॉप का थोड़ा समय भी बढ़ता है।','జవాబు పోస్ట్ అయింది. జవాబు డ్రాప్‌కు కొంచెం సమయం కూడా పెంచుతుంది.'],
+ 'Heads-ups are one-way. Confirm one with Echo instead.':['सूचनाएँ एकतरफ़ा होती हैं। इसके बजाय इको से पुष्टि करें।','సమాచారాలు ఏకపక్షం. బదులుగా ఎకోతో నిర్ధారించండి.'],
+ 'Claiming needs verified presence in this zone.':['लेने के लिए इस ज़ोन में सत्यापित उपस्थिति ज़रूरी है।','తీసుకోవడానికి ఈ జోన్‌లో ధృవీకరించిన ఉనికి అవసరం.'],
+ 'You cannot claim your own offer.':['आप अपना ही ऑफ़र नहीं ले सकते।','మీరు మీ స్వంత ఆఫర్‌ను తీసుకోలేరు.'],'You already claimed one.':['आप पहले ही एक ले चुके हैं।','మీరు ఇప్పటికే ఒకటి తీసుకున్నారు.'],
+ 'All of these have been claimed.':['ये सब ले लिए गए हैं।','ఇవన్నీ తీసుకున్నారు.'],
+ 'Claimed. Use Reply to agree where to meet in the zone.':['ले लिया। ज़ोन में कहाँ मिलना है, जवाब देकर तय करें।','తీసుకున్నారు. జోన్‌లో ఎక్కడ కలవాలో జవాబుతో నిర్ణయించండి.'],
+ 'Joining needs verified presence in this zone.':['जुड़ने के लिए इस ज़ोन में सत्यापित उपस्थिति ज़रूरी है।','చేరడానికి ఈ జోన్‌లో ధృవీకరించిన ఉనికి అవసరం.'],
+ 'You started this one, so you are already in.':['यह आपने शुरू किया है, इसलिए आप पहले से शामिल हैं।','ఇది మీరే ప్రారంభించారు, కాబట్టి మీరు ఇప్పటికే చేరారు.'],
+ 'You already joined.':['आप पहले ही जुड़ चुके हैं।','మీరు ఇప్పటికే చేరారు.'],'This group is full.':['यह समूह भर चुका है।','ఈ గ్రూప్ నిండిపోయింది.'],
+ 'You are in. The group is now full.':['आप शामिल हो गए। समूह अब भर गया है।','మీరు చేరారు. గ్రూప్ ఇప్పుడు నిండింది.'],'You are in. Use Reply to coordinate.':['आप शामिल हो गए। तालमेल के लिए जवाब दें।','మీరు చేరారు. సమన్వయానికి జవాబు ఇవ్వండి.'],
+ 'You left the group.':['आपने समूह छोड़ दिया।','మీరు గ్రూప్ వదిలారు.'],'Marked as found. This drop disappears in 2 minutes.':['मिल गया चिह्नित किया। यह ड्रॉप 2 मिनट में गायब हो जाएगा।','దొరికింది అని గుర్తించారు. ఈ డ్రాప్ 2 నిమిషాల్లో మాయమవుతుంది.'],
+ 'That does not look like a DropZone QR link.':['यह DropZone QR लिंक जैसा नहीं लगता।','ఇది DropZone QR లింక్‌లా లేదు.'],
+ 'This QR code has expired. Scan the live code at the zone (it changes every minute).':['यह QR कोड समाप्त हो गया है। ज़ोन पर दिखने वाला लाइव कोड स्कैन करें (यह हर मिनट बदलता है)।','ఈ QR కోడ్ గడువు ముగిసింది. జోన్ వద్ద లైవ్ కోడ్‌ను స్కాన్ చేయండి (ఇది ప్రతి నిమిషం మారుతుంది).']
+};
+const PX = [
+ [/^(\d+) min left$/, '$1 मिनट बाकी', '$1 నిమిషాలు మిగిలాయి'], [/^(\d+) s left$/, '$1 सेकंड बाकी', '$1 సెకన్లు మిగిలాయి'],
+ [/^(\S*\s*)Echo \((.*)\)$/, '$1इको ($2)', '$1ఎకో ($2)'],
+ [/^(\d+) of (\d+) left$/, '$2 में से $1 बचे', '$2 లో $1 మిగిలాయి'], [/^(\d+) of (\d+) joined$/, '$2 में से $1 जुड़े', '$2 లో $1 చేరారు'],
+ [/^In: (.*)$/, 'इनमें: $1', 'చేరినవారు: $1'], [/^Looking for: (.*)$/, (m, a) => 'खोज: ' + tw(a), (m, a) => 'వెతుకుతున్నది: ' + tw(a)],
+ [/^(.*) · right now · auto summary$/, '$1 · अभी · स्वचालित सारांश', '$1 · ఇప్పుడు · ఆటో సారాంశం'],
+ [/^(\d+) live drops?: (.*)$/, '$1 लाइव ड्रॉप: $2', '$1 లైవ్ డ్రాప్: $2'],
+ [/^(\d+) live(?: · (\d+) pulses?)?$/, (m, a, b) => a + ' लाइव' + (b ? ' · ' + b + ' पल्स' : ''), (m, a, b) => a + ' లైవ్' + (b ? ' · ' + b + ' పల్స్' : '')],
+ [/^Trending: “(.*)” \((\d+) echo(?:es)?\)$/, 'ट्रेंडिंग: “$1” ($2 इको)', 'ట్రెండింగ్: “$1” ($2 ఎకోలు)'],
+ [/^Mixed reports: (.*)$/, (m, a) => 'मिली-जुली रिपोर्ट: ' + trHead(a).replace(' vs ', ' बनाम '), (m, a) => 'మిశ్రమ రిపోర్ట్‌లు: ' + trHead(a).replace(' vs ', ' vs ')],
+ [/^No live drops in (.*)\.$/, '$1 में कोई लाइव ड्रॉप नहीं।', '$1 లో లైవ్ డ్రాప్‌లు లేవు.'],
+ [/^Story of (.*) today$/, 'आज $1 की कहानी', 'ఈరోజు $1 కథ'], [/^Most reported: (.*) \((\d+)\)$/, (m, a, n) => 'सबसे ज़्यादा रिपोर्ट: ' + tw(a) + ' (' + n + ')', (m, a, n) => 'ఎక్కువగా రిపోర్ట్ అయింది: ' + tw(a) + ' (' + n + ')'],
+ [/^Busiest around: (.*)$/, 'सबसे व्यस्त समय: $1', 'అత్యంత రద్దీ సమయం: $1'], [/^· (\d+) echoes$/, '· $1 इको', '· $1 ఎకోలు'],
+ [/^Inside (.*) \(accuracy about (\d+) m\)\. Only the zone ID is kept; coordinates are never stored or shown\.$/, '$1 के अंदर (सटीकता लगभग $2 मी)। केवल ज़ोन ID रखी जाती है; निर्देशांक कभी सहेजे या दिखाए नहीं जाते।', '$1 లోపల (ఖచ్చితత్వం సుమారు $2 మీ). జోన్ ID మాత్రమే ఉంచుతాం; కోఆర్డినేట్లు ఎప్పుడూ సేవ్ చేయం, చూపించం.'],
+ [/^Low-accuracy estimate \(about (\d+) m\)\. Presence cannot be confirmed(?:, nearest zone (.*))?\. Read-only view; posting and echoing are disabled\.$/, (m, a, z) => 'कम सटीक अनुमान (लगभग ' + a + ' मी)। उपस्थिति की पुष्टि नहीं हो सकती' + (z ? ', निकटतम ज़ोन ' + z : '') + '। केवल पढ़ने का व्यू; पोस्ट और इको बंद हैं।', (m, a, z) => 'తక్కువ ఖచ్చితత్వ అంచనా (సుమారు ' + a + ' మీ). ఉనికిని నిర్ధారించలేం' + (z ? ', దగ్గరి జోన్ ' + z : '') + '. చదవడానికి మాత్రమే; పోస్ట్, ఎకో నిలిపివేయబడ్డాయి.'],
+ [/^Position jumped about ([\d.]+) km in (\d+) s, which is physically impossible\. Treated as unverified\.$/, 'लोकेशन $2 सेकंड में लगभग $1 किमी कूद गई, जो भौतिक रूप से असंभव है। असत्यापित माना गया।', 'లొకేషన్ $2 సెకన్లలో సుమారు $1 కి.మీ దూకింది, ఇది భౌతికంగా అసాధ్యం. ధృవీకరించనిదిగా పరిగణించాం.'],
+ [/^Entered (.*) · (.*)$/, '$1 में प्रवेश · $2', '$1 లోకి ప్రవేశం · $2'], [/^Left (.*) · (.*)$/, '$1 से बाहर · $2', '$1 నుండి వెలుపలికి · $2'],
+ [/^QR-verified at (.*) until (.*)$/, '$1 पर QR-सत्यापित, $2 तक', '$1 వద్ద QR-ధృవీకరణ, $2 వరకు'], [/^Go to (.*)$/, '$1 पर जाएँ', '$1కి వెళ్లండి'],
+ [/^Dropped\. It lasts (\d+) min, and echoes from people here add time\.$/, 'ड्रॉप हो गया। यह $1 मिनट चलेगा, और यहाँ के लोगों के इको से समय बढ़ेगा।', 'డ్రాప్ అయింది. ఇది $1 నిమిషాలు ఉంటుంది, ఇక్కడి వారి ఎకోలు సమయం పెంచుతాయి.'],
+ [/^Rate limit reached: max (\d+) drops per hour per zone for one identity\.$/, 'सीमा पूरी: एक पहचान प्रति ज़ोन प्रति घंटे अधिकतम $1 ड्रॉप कर सकती है।', 'పరిమితి చేరింది: ఒక గుర్తింపు ప్రతి జోన్‌లో గంటకు గరిష్టంగా $1 డ్రాప్‌లు చేయగలదు.'],
+ [/^Reply limit reached: (\d+) per drop for one identity\.$/, 'जवाब की सीमा पूरी: एक पहचान प्रति ड्रॉप $1 जवाब दे सकती है।', 'జవాబు పరిమితి చేరింది: ఒక గుర్తింపు ప్రతి డ్రాప్‌కు $1 జవాబులు ఇవ్వగలదు.'],
+ [/^Report recorded \((\d+)\/(\d+)\)\..*$/, 'रिपोर्ट दर्ज ($1/$2)। धोखाधड़ी और गोपनीयता की रिपोर्ट तुरंत ड्रॉप छिपा देती है; बाकी के लिए दूसरे व्यक्ति की ज़रूरत है।', 'రిపోర్ట్ నమోదైంది ($1/$2). మోసం, గోప్యత రిపోర్ట్‌లు వెంటనే డ్రాప్‌ను దాస్తాయి; మిగతావాటికి రెండో వ్యక్తి అవసరం.'],
+ [/^Pulse (?:added|updated): (.*)$/, (m, a) => 'पल्स जोड़ा गया: ' + tw(a), (m, a) => 'పల్స్ జోడించబడింది: ' + tw(a)],
+ [/^You already reported "(.*)" here in the last 10 minutes\.$/, (m, a) => 'आपने पिछले 10 मिनट में यहाँ "' + tw(a) + '" पहले ही रिपोर्ट किया है।', (m, a) => 'గత 10 నిమిషాల్లో మీరు ఇక్కడ "' + tw(a) + '" ఇప్పటికే రిపోర్ట్ చేశారు.'],
+ [/^Posting is blocked: (.*)$/, (m, a) => 'पोस्ट करना बंद है: ' + xs(a), (m, a) => 'పోస్ట్ చేయడం నిలిపివేయబడింది: ' + xs(a)]
+];
+Object.assign(DX, { 'Choose a place': ['जगह चुनें', 'ప్రదేశాన్ని ఎంచుకోండి'], 'Busy': ['व्यस्त', 'రద్దీ'], 'Calm': ['शांत', 'ప్రశాంతం'] });
+const XL = { hi: 0, te: 1 };
+function tw(w) { return (DX[w] && DX[w][XL[lang]]) || tr(w); }
+function xs(str) {
+  const m = str.match(/^(\s*(?:·\s*)?)([\s\S]*?)(\s*)$/), pre = m[1], core = m[2], post = m[3];
+  if (!core || !(lang in XL)) return str;
+  let out = null;
+  if (DX[core]) out = DX[core][XL[lang]];
+  else if (I18N[lang] && I18N[lang][core]) out = I18N[lang][core];
+  else for (const p of PX) { if (p[0].test(core)) { out = core.replace(p[0], p[1 + XL[lang]]); break; } }
+  return out === null ? str : pre + out + post;
+}
+const XO = new WeakMap(), XT = new WeakMap(), SKIP = { SCRIPT: 1, STYLE: 1, TITLE: 1 };
+function xlText(n) {
+  const cur = n.nodeValue;
+  if (XT.has(n) && XT.get(n) === cur) { const o = XO.get(n), t = lang === 'en' ? o : xs(o); if (t !== cur) { n.nodeValue = t; if (lang === 'en') XT.delete(n); else XT.set(n, t); } return; }
+  if (lang === 'en') return;
+  const t = xs(cur); if (t !== cur) { XO.set(n, cur); n.nodeValue = t; XT.set(n, t); }
+}
+function xlAttrs(el) {
+  ['placeholder', 'title'].forEach(a => {
+    if (!el.hasAttribute || !el.hasAttribute(a)) return;
+    const k = 'xo' + a, cur = el.getAttribute(a);
+    if (el.dataset[k] !== undefined && el.dataset[k + 'T'] === cur) { const t = lang === 'en' ? el.dataset[k] : xs(el.dataset[k]); if (t !== cur) { el.setAttribute(a, t); el.dataset[k + 'T'] = t; } return; }
+    if (lang === 'en') return;
+    const t = xs(cur); if (t !== cur) { el.dataset[k] = cur; el.setAttribute(a, t); el.dataset[k + 'T'] = t; }
+  });
+}
+function xlNode(n) {
+  if (n.nodeType === 3) return xlText(n);
+  if (n.nodeType !== 1 || SKIP[n.tagName]) return;
+  xlAttrs(n); n.childNodes.forEach(xlNode);
+}
+const xlObs = new MutationObserver(ms => {
+  xlObs.disconnect();
+  ms.forEach(m => { if (m.type === 'childList') m.addedNodes.forEach(xlNode); else if (m.type === 'characterData') xlText(m.target); else xlAttrs(m.target); });
+  xlObs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title'] });
+});
+xlObs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title'] });
+xlNode(document.body);
+
+// ---------- moderator ----------
+function switchTab(name) {
+  const locked = name === 'mod' && !isMod;
+  if (locked) pendingTab = name;
+  if (name !== 'feed') stopQrScan();
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.getElementById('gateBox').style.display = locked ? '' : 'none';
+  ['feed', 'mod', 'privacy', 'flow'].forEach(v => { document.getElementById('view-' + v).style.display = (!locked && v === name) ? '' : 'none'; });
+  if (locked) return;
+  if (name === 'mod') { renderMod(); lastQrWin = currentWindow(); renderZoneQr(); }
+  if (name === 'feed') renderAll();
+}
+function unlockMod() { if (h53('dz-mod:' + document.getElementById('modPin').value.trim()) === '1lw65x0jh2606') { isMod = true; document.getElementById('pinErr').style.display = 'none'; switchTab(pendingTab || 'mod'); } else document.getElementById('pinErr').style.display = ''; }
+function modAction(id, action) {
+  const p = drops.find(x => x.id === id); if (!p) return;
+  if (action === 'remove') { p.status = 'removed'; strikes[p.posterId] = (strikes[p.posterId] || 0) + 1; saveStrikes(); }
+  else { p.status = 'visible'; }
+  saveDrops(); renderMod(); renderAll();
+}
+function renderMod() {
+  const queue = drops.filter(p => p.status === 'ai_flagged' || p.status === 'reported'), list = document.getElementById('modList');
+  list.innerHTML = queue.length ? queue.map(p => {
+    const s = strikes[p.posterId] || 0, dots = [0,1,2,3].map(i => '<div class="dot ' + (i < s ? 'on' : '') + '"></div>').join('');
+    return '<div class="card mod-item"><div class="row"><span class="tag ' + (p.status === 'ai_flagged' ? 'warn' : 'danger') + '">' + (p.status === 'ai_flagged' ? 'Auto-flagged' : 'Reported: ' + escapeHtml(p.reportReason || '')) + '</span><span class="sub">' + escapeHtml(p.zone) + '</span></div>' +
+      '<div class="post-title">' + escapeHtml(p.text) + '</div><div class="sub">Poster: ' + escapeHtml(p.poster) + '</div>' +
+      '<div class="strike-row">' + dots + '<span class="sub" style="margin-left:6px;">' + s + '/4 strikes</span></div>' +
+      '<div class="row"><button onclick="modAction(' + p.id + ',\'approve\')">Dismiss &amp; show</button><button class="primary" onclick="modAction(' + p.id + ',\'remove\')">Confirm &amp; remove</button></div></div>';
+  }).join('') : '<div class="empty">Queue is empty. Nothing needs review right now.</div>';
+  const banned = Object.keys(strikes).filter(k => strikes[k] >= 4);
+  document.getElementById('bannedBox').innerHTML = banned.length ? banned.length + ' identity(ies) removed from DropZone after 4 confirmed violations.' : '';
+}
+
+// ---------- demo data ----------
+function loadDemo() {
+  if (drops.some(p => p.demo)) return note('Sample activity is already loaded.');
+  const now = Date.now(), T = [['ask', 'Anyone know if {z} is open right now?'], ['offer', 'Spare charger at {z}, come grab it'], ['heads', 'Very crowded at {z}, come a bit later'], ['join', 'Need a 4th for a quick game near {z}'], ['look', 'Looking for hackathon teammates around {z}'], ['ask', 'Is the Wi-Fi working at {z}?']];
+  ZONES.forEach((z, i) => {
+    const n = (i % 2) + 1;
+    for (let j = 0; j < n; j++) {
+      const t = T[(i + j) % T.length], ec = []; for (let e = 0; e < (i + j) % 5; e++) ec.push('demo-e' + e);
+      drops.unshift({ id: now + i * 10 + j + Math.floor(Math.random() * 5), zone: z, kind: t[0], text: t[1].replace('{z}', z), photo: null, createdAt: now - (3 + i * 2 + j) * 60000, ttlMs: 3600000, status: 'visible', poster: 'Guest-' + (1000 + i * 7 + j), posterId: 'demo-' + i + j, echoes: ec, replies: t[0] === 'ask' ? [{ id: now + i * 10 + j + 500, text: 'Checked a minute ago: yes', poster: 'Guest-' + (2000 + i), posterId: 'demo-r' + i, t: now - 60000, demo: true }] : [], meta: demoMeta(t[0]), presence: 'gps', demo: true });
+    }
+    for (let k = 0; k < 2 + (i % 3); k++) pulses.push({ zone: z, tag: PULSES[(i + (k > 1 ? 1 : 0)) % PULSES.length], t: now - k * 90000, by: 'demo-' + i + k, demo: true });
+  });
+  saveDrops(); savePulses(); lastActionNote = 'Sample activity loaded. It is labelled "Sample" on each drop.'; renderAll();
+}
+function clearDemo() { drops = drops.filter(p => !p.demo); pulses = pulses.filter(p => !p.demo); saveDrops(); savePulses(); renderAll(); }
+
+// ---------- safety tests ----------
+function runSafetyTests() {
+  const rate = (n, fn) => { let ok = 0; for (let i = 0; i < n; i++) if (fn()) ok++; return Math.round(ok / n * 100); };
+  const N = 30, zs = ZONES;
+  const entry = rate(N * zs.length, (() => { let i = 0; return () => { const z = zs[i++ % zs.length]; const L = classify({ ...pt(...jit(ZONE_GEO[z], 20)), acc: 12 }); return L.status === 'inside' && L.zone === z; }; })());
+  const spoof = rate(N, () => classify({ ...pt(...jit(ZONE_GEO[zs[0]], 10)), acc: 5, prev: { ...pt(5000, 3000), secAgo: 4 } }).status === 'spoofed');
+  const outside = rate(N, () => classify({ ...pt(600, 400), acc: 10 }).status === 'outside');
+  const low = rate(N, () => classify({ ...pt(...jit(ZONE_GEO[zs[0]], 40)), acc: 180 }).status === 'inaccurate');
+  const cases = [['You idiot, give it back', true], ['This looks like a scam, do not trust', true], ['A skilled player left a bag at the court', false], ['Where is the registration desk?', false], ['Pay Rs 500 on UPI to get your bag back', true], ['Click bit.ly/win to claim a free phone', true]];
+  const rows = cases.map(([t, bad]) => { const f = aiScreen(t); const label = f && bad ? 'TP' : (!f && !bad ? 'TN' : (f ? 'FP (false positive)' : 'FN (missed)')); return '<div class="note" style="margin-top:6px;"><strong>' + label + '</strong> \u00b7 ' + escapeHtml(t) + '</div>'; }).join('');
+  const burst = ids => { const tmp = []; let ok = 0, blocked = 0; const now = Date.now(); for (let i = 0; i < 25; i++) ids.forEach(id => { if (recentCountFor(tmp, id, zs[0], now) < RATE_LIMIT) { tmp.push({ posterId: id, zone: zs[0], createdAt: now }); ok++; } else blocked++; }); return { ok, blocked }; };
+  const one = burst(['burst-1']), five = burst(['b1', 'b2', 'b3', 'b4', 'b5']);
+  document.getElementById('testOut').innerHTML =
+    '<div class="note" style="margin-top:10px;"><strong>Zone-entry detection:</strong> ' + entry + '% of ' + N * zs.length + ' simulated fixes (accuracy 12 m) placed in the right zone.<br><strong>Spoof detection:</strong> ' + spoof + '% of teleport jumps flagged.<br><strong>Outside venue:</strong> ' + outside + '% rejected.<br><strong>Low accuracy:</strong> ' + low + '% downgraded to read-only.<br><em>These use simulated positions, not field data.</em></div>' +
+    '<div class="note" style="margin-top:10px;"><strong>Burst test, one identity:</strong> 25 attempts, ' + one.ok + ' accepted, ' + one.blocked + ' throttled.<br><strong>Five throwaway identities:</strong> ' + five.ok + ' accepted, ' + five.blocked + ' throttled. Limitation: limits are per identity, so production needs email verification plus device/IP limits.</div>' + rows +
+    '<div class="note" style="margin-top:6px;">Keyword screening catches obvious abuse but misses scams with no trigger words. Human review stays essential.</div>';
+}
+
+// ---------- zone QR check-in ----------
+const QR_SECRET = 'dropzone-demo-secret', QR_WINDOW = 60000, QR_VALID_MS = 2 * 3600000;
+let qrState = null, qrStream = null, qrTimer = null;
+function h53(str) { let h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return (h2 >>> 0).toString(36) + (h1 >>> 0).toString(36); }
+function qrToken(pk, zi, w) { return h53(QR_SECRET + ':' + pk + ':' + zi + ':' + w).slice(0, 8); }
+function currentWindow() { return Math.floor(Date.now() / QR_WINDOW); }
+function validQrToken(pk, zi, tok) { const w = currentWindow(); return tok === qrToken(pk, zi, w) || tok === qrToken(pk, zi, w - 1); }
+function qrBase() { return location.href.split('#')[0].split('?')[0]; }
+function qrUrl(zone) { const zi = ZONES.indexOf(zone); return qrBase() + '?p=' + packKey + '&z=' + zi + '&k=' + qrToken(packKey, zi, currentWindow()); }
+function qrActive() { return !!(qrState && qrState.until > Date.now() && qrState.pack === packKey); }
+function qrOk(zone) { return qrActive() && qrState.zone === zone; }
+function toggleQrPanel() { const el = document.getElementById('qrPanel'); const on = el.style.display === 'none'; el.style.display = on ? '' : 'none'; if (!on) stopQrScan(); }
+function showQrErr(m, info) { const e = document.getElementById('qrErr'); e.textContent = m; e.style.display = m ? '' : 'none'; e.style.color = info ? 'inherit' : ''; }
+function verifyQr(text) {
+  text = (text || '').trim();
+  let q = '';
+  try { q = new URL(text).search; } catch (e) { q = text.indexOf('?') >= 0 ? text.slice(text.indexOf('?')) : (text.indexOf('=') >= 0 ? '?' + text : ''); }
+  const params = new URLSearchParams(q), pk = params.get('p') || packKey, zi = parseInt(params.get('z'), 10), tok = params.get('k') || '';
+  if (!PACKS[pk] || !(zi >= 0 && zi < PACKS[pk].zones.length) || !tok) { showQrErr('That does not look like a DropZone QR link.'); return false; }
+  if (!validQrToken(pk, zi, tok)) { showQrErr('This QR code has expired. Scan the live code at the zone (it changes every minute).'); return false; }
+  if (pk !== packKey) { applyPack(pk); loadPackData(); populateZones(); document.getElementById('packSel').value = pk; }
+  qrState = { zone: PACKS[pk].zones[zi], pack: pk, until: Date.now() + QR_VALID_MS };
+  showQrErr(''); stopQrScan();
+  document.getElementById('qrPanel').style.display = 'none';
+  if (PACKS[packKey].places && placeOf(qrState.zone) !== placeKey) { placeKey = placeOf(qrState.zone); populateZones(); }
+  document.getElementById('zoneSelect').value = qrState.zone;
+  lastActionNote = 'Verified by QR at ' + qrState.zone + '. Reading and posting are unlocked here for 2 hours, even without GPS.';
+  syncZone();
+  return true;
+}
+function demoScanQr() { verifyQr(qrUrl(zoneSel())); }
+async function startQrScan() {
+  showQrErr('');
+  if (!('BarcodeDetector' in window) || !navigator.mediaDevices) { showQrErr('Camera scanning is not available in this browser. Open your phone camera, scan the zone QR, and the link verifies you. You can also paste the link below.', true); return; }
+  try {
+    const det = new BarcodeDetector({ formats: ['qr_code'] });
+    qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const v = document.getElementById('qrVideo'); v.srcObject = qrStream; v.style.display = ''; await v.play();
+    qrTimer = setInterval(async () => { try { const r = await det.detect(v); if (r.length) verifyQr(r[0].rawValue); } catch (e) {} }, 400);
+  } catch (e) { stopQrScan(); showQrErr('Camera permission was denied. Scan with your phone camera app instead, or paste the link.'); }
+}
+function stopQrScan() { if (qrTimer) { clearInterval(qrTimer); qrTimer = null; } if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; } const v = document.getElementById('qrVideo'); if (v) { v.style.display = 'none'; v.srcObject = null; } }
+function renderZoneQr() {
+  const sel = document.getElementById('qrZoneSel');
+  if (sel.dataset.pack !== packKey) { sel.innerHTML = ZONES.map(z => '<option>' + z + '</option>').join(''); sel.dataset.pack = packKey; }
+  document.getElementById('qrShow').innerHTML = QRGen.svg(qrUrl(sel.value), 220);
+  document.getElementById('qrFileNote').style.display = location.protocol === 'file:' ? '' : 'none';
+  tickQr();
+}
+function tickQr() { const el = document.getElementById('qrCountdown'); if (el) el.textContent = 'Refreshes in ' + Math.ceil((QR_WINDOW - (Date.now() % QR_WINDOW)) / 1000) + ' s'; }
+let lastQrWin = 0;
+setInterval(() => { if (document.getElementById('view-mod').style.display === 'none') return; if (currentWindow() !== lastQrWin) { lastQrWin = currentWindow(); renderZoneQr(); } else tickQr(); }, 1000);
+function handleQrParam() { let q = ''; try { q = sessionStorage.getItem('dz_pending_qr') || ''; sessionStorage.removeItem('dz_pending_qr'); } catch (e) {} if (q) verifyQr(qrBase() + q); }
+(function captureQrParam() { const q = location.search; if (q && /[?&]z=\d+/.test(q) && /[?&]k=/.test(q)) { try { sessionStorage.setItem('dz_pending_qr', q); } catch (e) {} try { history.replaceState(null, '', location.pathname); } catch (e) {} } })();
+
+
+// ---------- UX layer ----------
+function ringIcon(ok) {
+  return '<svg class="p-ic" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2"' + (ok ? '' : ' stroke-dasharray="3 3"') + '/><circle cx="16" cy="16" r="7" fill="none" stroke="currentColor" stroke-width="2"/>' + (ok ? '<circle cx="16" cy="16" r="2.6" fill="currentColor"/>' : '') + '</svg>';
+}
+function scrollBehav() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'; }
+function openQr() {
+  const el = document.getElementById('qrPanel');
+  if (el.style.display === 'none') toggleQrPanel();
+  el.scrollIntoView({ block: 'center', behavior: scrollBehav() });
+}
+function presenceHtml() {
+  const sel = zoneSel(), L = locState, zname = escapeHtml(areaOf(sel));
+  const qrBtn = '<div class="p-act"><button class="sm primary" onclick="openQr()">Scan zone QR</button></div>';
+  let cls, title, body, act = '', chip = '', ok = false;
+  if ((L.status === 'inside' && L.zone === sel) || qrOk(sel)) {
+    cls = 'ok'; ok = true; title = "You're here"; chip = '<span class="tag">' + zname + '</span>'; body = 'You can read, post and echo.';
+  } else if (L.status === 'inside') {
+    cls = 'info'; title = "You're in a different zone"; body = 'Switch to your zone to read and post.';
+    act = '<div class="p-act"><button class="sm primary" data-z="' + escapeHtml(L.zone) + '" onclick="goZone(this.dataset.z)">Switch zone</button></div>';
+  } else if (L.status === 'inaccurate') {
+    cls = 'warn'; title = 'Location is approximate'; body = 'You can read here. Scan the zone QR to post.'; act = qrBtn;
+  } else if (L.status === 'denied') {
+    cls = 'warn'; title = 'Location is off'; body = 'Scan the zone QR to join. Nothing is collected.'; act = qrBtn;
+  } else if (L.status === 'spoofed') {
+    cls = 'bad'; title = "We couldn't confirm where you are"; body = "Scan the zone QR to prove you're here."; act = qrBtn;
+  } else if (L.status === 'outside') {
+    cls = 'info'; title = "You're outside this zone"; body = 'You can see its mood. Scan the zone QR to read and post.'; act = qrBtn;
+  } else {
+    cls = 'info'; title = 'Checking your location'; body = 'One moment.';
+  }
+  return { cls: cls, html: ringIcon(ok) + '<div><div class="p-title"><span>' + title + '</span>' + chip + '</div><div class="p-body">' + body + '</div>' + act + '</div>' };
+}
+updateLocUI = function () {
+  const m = presenceHtml(), box = document.getElementById('deniedNote');
+  box.className = 'presence ' + m.cls; box.innerHTML = m.html;
+  document.getElementById('qrBadge').textContent = qrActive() ? 'QR-verified at ' + areaOf(qrState.zone) + ' until ' + new Date(qrState.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  document.getElementById('entryLog').innerHTML = entryEvents.length ? '<strong>Zone events</strong> (newest first)<ul style="margin:4px 0 0 18px;padding:0;">' + entryEvents.map(e => '<li>' + escapeHtml(e) + '</li>').join('') + '</ul>' : '';
+  renderAll();
+};
+
+const _renderMapBase = renderMap;
+renderMap = function () {
+  _renderMapBase();
+  document.querySelectorAll('.map-zone').forEach(function (t) {
+    t.setAttribute('role', 'button'); t.setAttribute('tabindex', '0');
+    t.setAttribute('aria-pressed', t.classList.contains('selected') ? 'true' : 'false');
+    t.onkeydown = function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); t.click(); } };
+  });
+};
+function fabDrop() {
+  if (!canPost()) {
+    const b = document.getElementById('deniedNote');
+    b.classList.remove('nudge'); void b.offsetWidth; b.classList.add('nudge');
+    b.scrollIntoView({ block: 'center', behavior: scrollBehav() });
+    return;
+  }
+  const f = document.getElementById('formWrap');
+  if (f.style.display === 'none') toggleForm();
+  f.scrollIntoView({ block: 'start', behavior: scrollBehav() });
+  setTimeout(function () { const t = document.getElementById('dText'); if (t) t.focus({ preventScroll: true }); }, 250);
+}
+(function () { const e = document.getElementById('onboardEmail'); if (e) e.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') submitEmail(); }); })();
+Object.assign(DX, {
+  "You're here": ['आप यहाँ हैं', 'మీరు ఇక్కడ ఉన్నారు'],
+  'You can read, post and echo.': ['आप पढ़ सकते हैं, पोस्ट कर सकते हैं और इको कर सकते हैं।', 'మీరు చదవచ్చు, పోస్ట్ చేయవచ్చు, ఎకో చేయవచ్చు.'],
+  "You're in a different zone": ['आप दूसरे ज़ोन में हैं', 'మీరు వేరే జోన్‌లో ఉన్నారు'],
+  'Switch to your zone to read and post.': ['पढ़ने और पोस्ट करने के लिए अपने ज़ोन में जाएँ।', 'చదవడానికి, పోస్ట్ చేయడానికి మీ జోన్‌కు మారండి.'],
+  'Switch zone': ['ज़ोन बदलें', 'జోన్ మార్చండి'],
+  'Location is approximate': ['लोकेशन अनुमानित है', 'లొకేషన్ సుమారుగా ఉంది'],
+  'You can read here. Scan the zone QR to post.': ['आप यहाँ पढ़ सकते हैं। पोस्ट करने के लिए ज़ोन का QR स्कैन करें।', 'మీరు ఇక్కడ చదవచ్చు. పోస్ట్ చేయడానికి జోన్ QR స్కాన్ చేయండి.'],
+  "You're outside this zone": ['आप इस ज़ोन के बाहर हैं', 'మీరు ఈ జోన్ బయట ఉన్నారు'],
+  'You can see its mood. Scan the zone QR to read and post.': ['आप इसका माहौल देख सकते हैं। पढ़ने और पोस्ट करने के लिए ज़ोन का QR स्कैन करें।', 'మీరు దీని వాతావరణం చూడవచ్చు. చదవడానికి, పోస్ట్ చేయడానికి జోన్ QR స్కాన్ చేయండి.'],
+  'Location is off': ['लोकेशन बंद है', 'లొకేషన్ ఆఫ్‌లో ఉంది'],
+  'Scan the zone QR to join. Nothing is collected.': ['जुड़ने के लिए ज़ोन का QR स्कैन करें। कुछ भी इकट्ठा नहीं किया जाता।', 'చేరడానికి జోన్ QR స్కాన్ చేయండి. ఏమీ సేకరించబడదు.'],
+  "We couldn't confirm where you are": ['हम आपकी जगह की पुष्टि नहीं कर सके', 'మీరు ఎక్కడ ఉన్నారో నిర్ధారించలేకపోయాం'],
+  "Scan the zone QR to prove you're here.": ['यहाँ होने का प्रमाण देने के लिए ज़ोन का QR स्कैन करें।', 'మీరు ఇక్కడ ఉన్నారని నిరూపించడానికి జోన్ QR స్కాన్ చేయండి.'],
+  'Checking your location': ['आपकी लोकेशन जाँची जा रही है', 'మీ లొకేషన్ తనిఖీ చేస్తున్నాం'],
+  'One moment.': ['एक पल।', 'ఒక్క క్షణం.'],
+  'Scan zone QR': ['ज़ोन QR स्कैन करें', 'జోన్ QR స్కాన్ చేయండి'],
+  'Demo tools': ['डेमो टूल', 'డెమో టూల్స్'],
+  'Simulate location': ['लोकेशन सिमुलेट करें', 'లొకేషన్ సిమ్యులేట్ చేయండి'],
+  '+ Drop': ['+ ड्रॉप', '+ డ్రాప్'],
+  'How is it here? Tap one.': ['यहाँ कैसा है? एक चुनें।', 'ఇక్కడ ఎలా ఉంది? ఒకటి ఎంచుకోండి.'],
+  'Nothing live here yet': ['यहाँ अभी कुछ लाइव नहीं है', 'ఇక్కడ ఇంకా ఏమీ లైవ్‌లో లేదు'],
+  'Be the first. Ask a question, offer something, or tap a pulse above.': ['पहले बनें। सवाल पूछें, कुछ ऑफ़र करें, या ऊपर कोई पल्स चुनें।', 'మొదటివారు అవ్వండి. ప్రశ్న అడగండి, ఏదైనా ఆఫర్ చేయండి, లేదా పైన పల్స్ నొక్కండి.'],
+  'Start a drop': ['ड्रॉप शुरू करें', 'డ్రాప్ మొదలుపెట్టండి'],
+  'Pick a zone': ['ज़ोन चुनें', 'జోన్ ఎంచుకోండి'],
+  'Canteen, library, seminar hall.': ['कैंटीन, लाइब्रेरी, सेमिनार हॉल।', 'క్యాంటీన్, లైబ్రరీ, సెమినార్ హాల్.'],
+  'Prove you are there': ['साबित करें कि आप यहाँ हैं', 'మీరు ఇక్కడ ఉన్నారని నిరూపించండి'],
+  'Use location, or scan the zone QR.': ['लोकेशन का उपयोग करें, या ज़ोन का QR स्कैन करें।', 'లొకేషన్ ఉపయోగించండి, లేదా జోన్ QR స్కాన్ చేయండి.'],
+  'Drop it': ['ड्रॉप करें', 'డ్రాప్ చేయండి'],
+  'Ask, offer or find. It fades unless people here echo it.': ['पूछें, ऑफ़र करें या खोजें। यहाँ के लोग इको न करें तो यह मिट जाता है।', 'అడగండి, ఆఫర్ చేయండి లేదా వెతకండి. ఇక్కడి వారు ఎకో చేయకపోతే ఇది మాయమవుతుంది.'],
+  'College email': ['कॉलेज ईमेल', 'కాలేజీ ఈమెయిల్'],
+  'Join your campus': ['अपने कैंपस से जुड़ें', 'మీ క్యాంపస్‌లో చేరండి'],
+  'Enter a valid email, like you@college.edu': ['सही ईमेल दर्ज करें, जैसे you@college.edu', 'సరైన ఈమెయిల్ ఇవ్వండి, ఉదా. you@college.edu'],
+  'Used only if a drop is reported. Never shown to others. Each visit gets a new temporary name.': ['केवल तब उपयोग होता है जब किसी ड्रॉप की रिपोर्ट हो। दूसरों को कभी नहीं दिखता। हर बार नया अस्थायी नाम मिलता है।', 'డ్రాప్ రిపోర్ట్ అయినప్పుడు మాత్రమే ఉపయోగిస్తాం. ఇతరులకు కనిపించదు. ప్రతిసారి కొత్త తాత్కాలిక పేరు వస్తుంది.']
+});
+xlNode(document.body);
+
+
+Object.assign(I18N.hi, { 'How it works': 'यह कैसे काम करता है' });
+Object.assign(I18N.te, { 'How it works': 'ఇది ఎలా పనిచేస్తుంది' });
+applyLang();
+// ---------- boot ----------
+(function boot() {
+  let saved = 'viit'; try { saved = localStorage.getItem('dz_pack') || 'viit'; } catch (e) {}
+  applyPack(saved); loadPackData();
+  strikes = loadJSON('dz_strikes', {}); blockedByMe = loadJSON('dz_blocked', []);
+  checkOnboarding();
+  setInterval(() => { if (document.getElementById('view-feed').style.display !== 'none' && document.getElementById('view-main').style.display !== 'none') renderAll(); }, 15000);
+})();
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, runTransaction } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const app = initializeApp({
+  apiKey: "AIzaSyCEVFx-hDal7D8ZgGOdbP5n3VMDNa3VsNI",
+  authDomain: "dropzone-samartha.firebaseapp.com",
+  projectId: "dropzone-samartha",
+  storageBucket: "dropzone-samartha.firebasestorage.app",
+  messagingSenderId: "852057596804",
+  appId: "1:852057596804:web:e9de991c82c01accaf33d1"
+});
+const db = getFirestore(app);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const clean = o => JSON.parse(JSON.stringify(o, (k, v) => (typeof v === 'string' && EMAIL_RE.test(v)) ? 'u' + String(h53('dz-id:' + v.trim().toLowerCase())) : v));
+const safe = s => String(s).replace(/[^\w-]/g, '_');
+let sentD = new Map(), sentP = new Map(), unsubs = [];
+
+async function upsertDrop(id, o) {
+  const ref = doc(db, 'drops', id);
+  try {
+    await runTransaction(db, async tx => {
+      const snap = await tx.get(ref);
+      if (snap.exists()) o.echoes = [...new Set([...(snap.data().echoes || []), ...(o.echoes || [])])];
+      tx.set(ref, o);
+    });
+  } catch (e) { await setDoc(ref, o); }
+}
+function push(list, sent, coll, idOf) {
+  const seen = new Set();
+  list.forEach(p => {
+    const id = idOf(p); seen.add(id);
+    let o = clean(p);
+    if (JSON.stringify(o).length > 900000) o.photo = null;
+    const s = JSON.stringify(p);
+    if (sent.get(id) === s) return;
+    sent.set(id, s);
+    const body = Object.assign(o, { pack: packKey });
+    (coll === 'drops' ? upsertDrop(id, body) : setDoc(doc(db, coll, id), body)).catch(e => console.warn('sync', e));
+  });
+  sent.forEach((_, id) => { if (!seen.has(id)) { sent.delete(id); deleteDoc(doc(db, coll, id)).catch(e => console.warn('sync', e)); } });
+}
+const dId = p => packKey + '_' + safe(p.id);
+const pId = x => packKey + '_' + safe(x.t) + '_' + safe(x.by);
+
+const _sd = saveDrops, _sp = savePulses;
+saveDrops = function () { _sd(); push(drops, sentD, 'drops', dId); };
+savePulses = function () { _sp(); push(pulses, sentP, 'pulses', pId); };
+
+function subscribe() {
+  unsubs.forEach(u => u()); unsubs = [];
+  sentD = new Map(); sentP = new Map();
+  const listen = (coll, sent, idOf, assign) => onSnapshot(query(collection(db, coll), where('pack', '==', packKey)), snap => {
+    if (snap.metadata.fromCache && snap.empty) return;
+    const arr = snap.docs.map(d => { const x = d.data(); delete x.pack; return x; });
+    arr.forEach(x => sent.set(idOf(x), JSON.stringify(x)));
+    assign(arr); renderAll();
+  }, e => console.warn('listen', e));
+  unsubs.push(listen('drops', sentD, dId, a => { drops = a; }));
+  unsubs.push(listen('pulses', sentP, pId, a => { pulses = a; }));
+}
+const _sw = switchPack;
+switchPack = function () { _sw.apply(null, arguments); subscribe(); };
+subscribe();
+
+let toastEl = null, toastT = 0;
+const _note = note;
+note = function (m) {
+  _note(m);
+  try {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.setAttribute('role', 'status');
+      toastEl.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));max-width:min(92vw,420px);background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:14px;box-shadow:0 4px 18px rgba(0,0,0,.25);z-index:9999;display:none;';
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = m; toastEl.style.display = '';
+    clearTimeout(toastT); toastT = setTimeout(() => { toastEl.style.display = 'none'; }, 3500);
+  } catch (e) {}
+};
+</script>
+
+</body>
+</html>
